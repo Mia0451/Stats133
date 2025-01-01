@@ -153,7 +153,7 @@ server <- function(input, output) {
   output$plot2 <- renderPlotly({
     # the following code is for demo purposes only; adapt it!!!
     multi_years = tbl_multi_returns()
-    temp <- ggplotly(tbl_multi_returns(), aes(x = years, y = return)) +
+    temp <- ggplot(tbl_multi_returns(), aes(x = years, y = return)) +
       geom_bar(stat = "identity", fill = "lightblue") +
       labs(title = paste("S&P 500 ", as.character(input$multi_years_return), "-years returns", sep=""),
            x = NULL,
