@@ -1,0 +1,389 @@
+---
+title: "Lab-2: Vectors"
+subtitle: "Stat 133"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab02-template.qmd` to answer the questions.
+
+-   Rename this file as `lab02-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab02-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes
+    `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive
+    no credit.
+:::
+
+------------------------------------------------------------------------
+
+# Data: US State Facts and Figures (1970s)
+
+In this lab, you are going to work with the data set `state` that has to
+do with US State Facts and Figures in the 1970s. Specifically, we are
+going to use the following vectors:
+
+```{r}
+# vectors
+name = state.name
+area = state.area
+region = state.region
+population = state.x77[ ,"Population"]
+income = state.x77[ ,"Income"]
+illiteracy = state.x77[ ,"Illiteracy"]
+```
+
+## Your turn: data-types
+
+Use the function `typeof()` to see the data type of each of the above
+vectors.
+
+```{r}
+# your code
+typeof(name)
+typeof(area)
+typeof(region)
+typeof(population)
+typeof(income)
+typeof(illiteracy)
+```
+
+------------------------------------------------------------------------
+
+# Subsetting
+
+Let's create a vector `five` by selecting the first five elements in
+`name`:
+
+```{r}
+five <- head(name, n = 5)
+five
+```
+
+Single brackets `[ ]` are used to subset (i.e. subscript, split, slice)
+vectors. For instance, to extract the first element in `five` we pass
+`1` inside the brackets:
+
+```{r}
+five[1]
+```
+
+## Your turn: subsetting vectors
+
+Without running the code, try to guess the output of the following
+commands, and then run them to check your guess:
+
+a)  number 2: `five[2]`
+
+```{r}
+# your code
+five[2]
+```
+
+b)  an index of zero: `five[0]`?
+
+```{r}
+# your code
+five[0]
+```
+
+c)  a negative index: `five[-1]`?
+
+```{r}
+# your code
+five[-1]
+```
+
+d)  various negative indices: `five[-c(1,2,3)]`?
+
+```{r}
+# your code
+five[-c(1,2,3)]
+```
+
+e)  an index greater than the length of the vector: `five[6]`?
+
+```{r}
+# your code
+five[6]
+```
+
+f)  repeated indices: `five[c(1,2,2,3,3,3)]`?
+
+```{r}
+# your code
+five[c(1, 2, 2, 3, 3, 3)]
+```
+
+------------------------------------------------------------------------
+
+# Sequences
+
+Often, you will need to generate vectors of numeric sequences, like the
+first five elements `1:5`, or from the first till the last element
+`1:length(name)`. R provides the colon operator `:`, and the functions
+`seq()`, and `rep()` to create various types of sequences, for example:
+
+```{r}
+# 1, 2, 3, 4
+1:4
+
+# 1, 2, 3, 4
+seq(from = 1, to = 4, by = 1)
+
+# 1, 3, 5, 7, 9
+seq(from = 1, to = 10, by = 2)
+
+# 10, 8, 6, 4, 2
+seq(from = 10, to = 2, by = -2)
+
+# 1, 1, 1, 1, 1
+rep(1, 5)
+```
+
+## Your turn: sequences and repetitions
+
+Write R commands to extract:
+
+a)  all the even elements in `name` (i.e. extract positions 2, 4, 6,
+    etc)
+
+```{r}
+# your code
+name[seq(from = 2, to = length(name), by = 2)]
+```
+
+b)  all the odd elements in `area` (i.e. extract positions 1, 3, 5, etc)
+
+```{r}
+# your code
+area[seq(from = 1, to = length(name), by = 2)]
+```
+
+c)  all multiples of 5 (e.g. 5, 10, 15, etc) of `income`
+
+```{r}
+# your code
+income[seq(from = 5, to = length(name), by = 5)]
+```
+
+d)  elements in positions 10, 20, 30, 40, etc of `population`
+
+```{r}
+# your code
+population[seq(from = 10, to = length(name), by = 10)]
+```
+
+e)  all the even elements in `name` but this time in reverse order;
+    *hint*: the `rev()` function is your friend.
+
+```{r}
+# your code
+name[rev(seq(from = 2, to = length(name), by = 2))]
+```
+
+------------------------------------------------------------------------
+
+# Logical Subsetting and Comparisons
+
+Another kind of subsetting/subscripting style is the so-called **logical
+subsetting**. This kind of subsetting typically takes place when making
+comparisons.
+
+A **comparison operation** occurs when you use comparison operators such
+as:
+
+-   `>` greater than
+-   `>=` greater than or equal
+-   `<` less than
+-   `<=` less than or equal
+-   `==` equal
+-   `!=` different
+
+For example:
+
+``` r
+area_five <- area[1:5]
+
+# elements greater than 100000
+area_five[area_five > 100000]
+
+# elements less than 100000
+area_five[area_five < 100000]
+
+# elements less than or equal to 53000
+area_five[area_five <= 53000]
+
+# elements different from 50000
+area_five[area_five != 50000]
+```
+
+In addition to using comparison operators, you can also use **logical
+operators** to produce a logical vector. The most common type of logical
+operators are:
+
+-   `&` AND
+-   `|` OR
+-   `!` negation
+
+Run the following commands to see what R does:
+
+``` r
+# AND
+TRUE & TRUE
+TRUE & FALSE
+FALSE & FALSE
+
+# OR
+TRUE | TRUE
+TRUE | FALSE
+FALSE | FALSE
+
+# NOT
+!TRUE
+!FALSE
+```
+
+<br>
+
+Logical operators allow you to combine several comparisons:
+
+```{r}
+# vectors for first 10 elements
+name10 <- name[1:10]
+area10 <- area[1:10]
+pop10 <- population[1:10]
+inc10 <- income[1:10]
+
+# names of first 10 states with area greater than 100,000
+name10[area10 > 100000]
+
+# names of first 10 states with populations between 2000 and 3000 (exclusive)
+name10[pop10 > 2000 & pop10 < 3000]
+```
+
+## Your turn: logical subsetting
+
+Write commands, using bracket notation, to answer the following
+questions (you may need to use `is.na()`, `min()`, `max()`, `which()`,
+`which.min()`, `which.max()`):
+
+a)  name of states from region `"West"`
+
+```{r}
+# your code
+name[region == "West"]
+
+```
+
+b)  name of states from regions `"West"` or `"Northeast"`
+
+```{r}
+# your code
+name[region == "West" | region == "Northeast"]
+```
+
+c)  number (count) of states in the `"South"` region; *hint*: the
+    `sum()` function is your friend
+
+```{r}
+# your code
+length(name[region == "South"])
+```
+
+d)  name of state with largest area; *hint*: the `which.max()` function
+    is your friend
+
+```{r}
+# your code
+name[which.max(area)]
+```
+
+e)  largest Population of states in the `"West"` region; *hint*: the
+    `max()` function is your friend
+
+```{r}
+# your code
+
+#name[region == "West"][which.max(population[region == "West"])]
+name[which(region == "West" & population == max(population[region == "West"]))]
+```
+
+f)  name of states with illiteracy percentage of at most 60%, and
+    population of at least 2000
+
+```{r}
+# your code
+name[illiteracy <= 60 & population >= 2000]
+```
+
+g)  name of state(s) in the `"Northeast"` with income equal to the
+    median income of states in the `"Northeast"`
+
+```{r}
+# your code
+# name[region == "Northeast" & income == "median income"]
+name[region == "Northeast" & income == median(income[region == "Northeast"])]
+```
+
+------------------------------------------------------------------------
+
+# More Manipulations
+
+Consider the vector `vec` given below:
+
+```{r}
+vec = c("x", "y", "a", "b")
+```
+
+## Your Turn: more vector manipulations
+
+For each of the following parts, write at least two different commands
+that produce the given outputs:
+
+a)  `"x"`
+
+```{r}
+# your commands
+vec[1]
+vec[-c(2,3,4)]
+```
+
+<br>
+
+b)  `"b" "a" "y" "x"`
+
+```{r}
+# your commands
+rev(vec)
+vec[seq(from=4, to=1, by=-1)]
+```
+
+<br>
+
+c)  `"b" "b" "b"`
+
+```{r}
+# your commands
+rep(vec[4], 3)
+vec[c(4,4,4)]
+```

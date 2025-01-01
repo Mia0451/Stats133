@@ -1,0 +1,122 @@
+---
+title: "Lab 3 Demo"
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Matrices!
+
+A matrix is a 2D vector—it's still atomic but can now hold data in a grid rather than a single row.
+
+We create a matrix with the matrix() function, inputting the data as a vector, and then specifying the number of rows and columns—keeping track of whether we're filling in by row or by column (the byrow argument). Note that recycling occurs if the length of your input vector is smaller than nrow\*ncol.
+
+```{r}
+# Try changing nrow, ncol and byrow to see how this affects the resulting matrix.
+m = matrix(c(1, 2, 3, 4), nrow=3, ncol=3, byrow=TRUE)
+m
+```
+
+To subset a matrix, we now provide **2** vectors inside the square brackets, separated by a comma. The first vector refers to the rows you want to keep (or remove), and the second refers to the columns. Leaving an entry blank selects the entire row/column.
+
+```{r}
+m[, 3]
+```
+
+```{r}
+m[2, 3]
+```
+
+```{r}
+m[-c(2, 3), 1]
+```
+
+We can instead subset with a single number (ill-advised) which will return the item at the index position of the input data vector *as if you had specified byrow = FALSE*. Let's take a look to see what I mean:
+
+```{r}
+matrix(c(1, 2, 3, 4), nrow=2, ncol=2)[2]
+c(1, 2, 3, 4)[2]
+```
+
+```{r}
+matrix(c(1, 2, 3, 4), nrow=2, ncol=2, byrow = TRUE)[2]
+matrix(c(1, 3, 2, 4), nrow=2, ncol=2)[2] # This is equivalent to the first matrix, and now the [2] matches our expectation
+c(1, 3, 2, 4)[2]
+```
+
+We can also set values with subsetting, and remove values too
+
+```{r}
+m[2, 2] = 10
+m
+```
+
+```{r}
+vec = c(10, 5, 2)
+vec
+
+vec = vec[1:2]
+vec
+```
+
+Lastly, naming the rows and columns of a matrix is much like setting a value using subsetting—we first use rownames() or colnames() to select the data we're interested in, and then set it to the values we want. Note that this is a rather unusual use of a function:
+
+```{r}
+rownames(m) = c("row1", "pokemon", "row3")
+m
+```
+
+Activity: tic-tac-toe
+
+```{r}
+tictactoe = matrix(nrow=3, ncol=3) # If we give it no data, it initalizes with blanks
+tictactoe
+```
+
+```{r}
+tictactoe[2, 2] = 'x'
+tictactoe[1, 2] = 'o'
+tictactoe[1, 3] = 'x'
+tictactoe
+```
+
+# Lists!
+
+A list is a 1D non-atomic data object—basically a more sophisticated vector that can hold multiple datatypes. We initialize it much like we would a vector with the list() function instead of c(). Note that we can name elements as well
+
+```{r}
+l = list("my_matrix"=m, vec, "hello", FALSE)
+l
+```
+
+To subset one of these stored data objects, we use the double brackets. Note that single brackets return a subset of the list and retains the list type (check with the class() function)
+
+```{r}
+class(l[[3]])
+```
+
+```{r}
+class(l[3])
+```
+
+We can further subset once we have selected an object from the list. Dollar sign works for named objects inside the list.
+
+```{r}
+l[[1]][2, 3]
+```
+
+```{r}
+l$my_matrix[2, 3]
+```
+
+What about deleting things from a list? We can save a subset of the list to memory like we would for vectors or matrices, or we have the additional option of using the NULL keyword.
+
+```{r}
+l = l[1:3]
+l
+```
+
+```{r}
+l[[3]] = NULL
+l
+```

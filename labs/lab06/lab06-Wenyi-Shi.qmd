@@ -1,0 +1,585 @@
+---
+title: "Data Manipulation with dplyr"
+subtitle: "Stat 133, Lab-6"
+format:
+  revealjs: 
+    smaller: true
+    scrollable: true
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)
+library(knitr)
+```
+
+
+## Manipulation of Data Frames with `"dplyr"` {.unnumbered}
+
+In this lab, you will start learning how to manipulate tables, *in a
+syntactic way*, with functions from the *tidyverse* package `"dplyr"` .
+
+\
+
+. . .
+
+__Packages:__ `"tidyverse"`
+
+```{r eval = FALSE}
+library(tidyverse)
+```
+
+\
+
+. . .
+
+__Cheat sheet:__ <a href="https://stat133.berkeley.edu/fall-2024/cheatsheets/dplyr-cheatsheet.pdf" target="_blank">dplyr-cheatsheet.pdf</a>
+
+\
+
+. . .
+
+__HTML Slides:__ You'll also use Quarto to make HTML slides with `revealjs`
+
+
+## Learning Objectives
+
+
+-   Get started with `"dplyr"`
+
+. . .
+
+-   Get to know the basic dplyr verbs:
+    -   `slice()`: pick rows by position
+    -   `filter()`: keep rows matching criteria
+    -   `select()`: pick columns by name or position
+    -   `mutate()`: add new variables
+    -   `arrange()`: reorder rows
+    -   `summarise()`: reduce variables to values
+    -   `group_by()`: grouped (aggregated) operations
+
+
+## General Instructions {.scrollable .smaller}
+
+-   Write your code and content in a `qmd` (quarto markdown) file.
+-   Name this file as `lab6-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab6-gaston-sanchez.qmd`).
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+-   Also, if you submit the incorrect files you will receive no credit.
+
+
+
+## Data `starwars` {.unnumbered}
+
+The data for this lab has to do with Star Wars characters. The
+dataset is part of the `dplyr` package: `starwars`. 
+
+. . .
+
+```{r}
+# assuming you loaded dplyr ...
+starwars
+```
+
+
+# Slice
+
+## Slicing rows by position
+
+`slice()` allows you to select rows by position:
+
+```{r}
+#| tbl-cap: First three rows from `starwars`
+# first three rows
+three_rows <- slice(starwars, 1:3)
+three_rows
+```
+
+
+## Slicing rows by position
+
+```{r}
+# more examples
+even_rows = slice(starwars, seq(from = 2, to = 87, by = 2))
+
+random_rows = slice_sample(starwars, n = 4)
+
+first_five_rows = slice_head(starwars, n = 5)
+
+last_five_rows = slice_tail(starwars, n = 5)
+```
+
+
+# Filter
+
+## Filtering rows on a condition
+
+`filter()` allows you to select rows by defining a __condition__ (which
+could be simple or compound):
+
+```{r}
+# subset rows given a simple condition
+# (height greater than 200 cm)
+gt_200 <- filter(starwars, height > 200)
+gt_200
+```
+
+
+## Filtering rows on a condition
+
+```{r}
+# subset rows given a compound condition
+filter(starwars, height > 200 & mass < 100)
+```
+
+
+# Select
+
+## Selecting Columns
+
+`select()` allows you to select one or more columns by name:
+
+```{r}
+# columns by name
+name_height <- select(starwars, name, height)
+name_height
+```
+
+
+## Selecting Columns
+
+`select()` allows you to select one or more columns by name:
+
+```{r eval = FALSE}
+# columns from name to mass
+select(starwars, name:mass)
+
+# exclude columns from name to mass
+select(starwars, -(name:mass))
+
+# from 1st to 5th columns
+select(starwars, 1:5)
+```
+
+
+## Your Turn
+
+a)  use `slice()` to subset the data by selecting the first 5 rows.
+
+```{r}
+# your code
+slice_head(starwars, n = 5)
+```
+
+
+## Your Turn
+
+b)  use `slice()` to subset the data by selecting rows 10, 15, 20,
+    ..., 50. *Hint*: the numeric sequence generator function `seq()` is
+    your friend.
+
+```{r}
+# your code
+slice(starwars, seq(from = 10, to = 50, by = 5))
+```
+
+
+## Your Turn
+
+c)  use `filter()` to subset those individuals with height less than 100
+    cm tall.
+
+```{r}
+# your code
+filter(starwars, height < 100)
+```
+
+
+## Your Turn
+
+d)  use `filter()` to subset rows of female individuals (`sex`).
+
+```{r}
+# your code
+filter(starwars, sex == "female")
+```
+
+
+## Your Turn
+
+e)  use `filter()` and then `select()`, to subset rows of individuals
+    from `Naboo`,\
+    and then display their names.
+
+```{r}
+# your code
+filter(starwars, homeworld == "Naboo") |> select(name)
+```
+
+
+## Your Turn
+
+f)  find how to select the name, homeworld, and species, of human female
+    individuals.
+
+```{r}
+# your code
+filter(starwars, sex == "female" & species == "Human") |> select(name, homeworld, species)
+```
+
+
+
+# Mutate 
+
+## Adding new variables: `mutate()`
+
+Another basic verb is `mutate()` which allows you to add new variables.
+Let's create a small data frame for the female individuals with three
+columns: `name`, `height`, and `mass`:
+
+```{r}
+# creating a small data frame step by step
+fem <- filter(starwars, sex == 'female')
+fem <- select(fem, name, height, mass)
+fem <- slice(fem, c(1, 2, 5, 6, 8))
+fem
+```
+
+
+## Adding new variables: `mutate()`
+
+Now, let's use `mutate()` to (temporarily) add a column with the ratio
+`height / mass`:
+
+```{r}
+mutate(fem, height / mass)
+```
+
+
+## Adding new variables: `mutate()`
+
+You can also give a new name, like: `ht_wt = height / mass`:
+
+```{r}
+mutate(fem, ht_wt = height / mass)
+```
+
+
+## Adding new variables: `mutate()`
+
+In order to permanently change the data, you need to assign the changes
+to an object:
+
+```{r}
+fem2 <- mutate(fem, ht_m = height * 0.0254, wt_kg = mass * 0.4536)
+fem2
+```
+
+
+
+# Arrange
+
+## Reordering rows: `arrange()`
+
+The next basic verb of `"dplyr"` is `arrange()` which allows you to
+reorder rows. For example, here's how to arrange the rows of `fem` by
+`height`
+
+```{r results='hide'}
+# order rows by height (increasingly)
+arrange(fem, height)
+```
+
+
+## Reordering rows: `arrange()`
+
+By default `arrange()` sorts rows in increasing order. To arrange rows
+in descending order you need to use the auxiliary function `desc()`.
+
+```{r}
+
+# order rows by height (decreasingly)
+arrange(fem, desc(height))
+```
+. . . 
+
+```{r}
+# order rows by height, and then mass
+arrange(fem, height, mass)
+```
+
+
+## Your Turn
+
+a)  use the original data frame to `filter()` and `arrange()` those
+    individuals with height less than 150 cm tall, in increasing order
+    by height.
+
+```{r}
+# your code
+filter(starwars, height < 150) |> arrange(height)
+```
+
+
+## Your Turn
+
+b)  display the name, homeworld, and species, of the top-5 tallest
+    individuals.
+
+```{r}
+# your code
+arrange(starwars, desc(height)) |> slice_head(n = 5) |> select(name, homeworld, species)
+```
+
+
+## Your Turn
+
+c)  display the name, homeworld, and species, for the top-5 heaviest
+    individuals.
+
+```{r}
+# your code
+arrange(starwars, desc(mass)) |> slice_head(n = 5) |> select(name, homeworld, species)
+```
+
+
+# Summarize
+
+## Summarizing values with `summarise()`
+
+The next verb is `summarise()`. Conceptually, this involves applying a
+function on one or more columns, in order to summarize values. This is
+probably easier to understand with one example.
+
+. . . 
+
+Say you are interested in calculating the average height of all
+individuals. To do this "a la dplyr" you use `summarise()`, or its
+synonym function `summarize()`:
+
+```{r}
+# average height (removing missing values)
+summarise(starwars, avg_height = mean(height, na.rm = TRUE))
+```
+
+
+## Summarizing values with `summarise()`
+
+What if you want to calculate some summary statistics for `height`: min,
+median, mean, and max?
+
+```{r}
+# some stats for height (dplyr)
+summarise(
+  starwars, 
+  min = min(height, na.rm = TRUE),
+  median = median(height, na.rm = TRUE),
+  avg = mean(height, na.rm = TRUE),
+  max = max(height, na.rm = TRUE)
+)
+```
+
+
+# Group By
+
+## Grouped operations
+
+To actually appreciate the power of `summarise()`, we need to introduce
+the other major basic verb in `"dplyr"`: `group_by()`. This is the
+function that allows you to perform data aggregations, or *grouped
+operations*.
+
+. . .
+
+Let's see the combination of `summarise()` and `group_by()` to calculate
+the average height by homeworld:
+
+```{r results='hide'}
+# average height, grouped by homeworld
+summarise(
+  group_by(starwars, homeworld),
+  avg_salary = mean(height, na.rm = TRUE)
+)
+```
+
+
+## Grouped operations
+
+Here's a more fancy example: average mass and height, by homeworld,
+displayed in desceding order by average height:
+
+```{r results='hide'}
+arrange(
+  summarise(
+    group_by(starwars, homeworld),
+    avg_height = mean(height, na.rm = TRUE),
+    avg_mass = mean(mass, na.rm = TRUE)),
+  desc(avg_height)
+)
+```
+
+
+## Your Turn
+
+a)  use `summarise()` to get the largest height value.
+
+```{r}
+# your code
+summarise(
+  starwars,
+  max = max(height, na.rm = TRUE)
+)
+```
+
+
+## Your Turn
+
+b)  use `summarise()` and `group_by()` to display the median of mass, by
+    homeworld
+
+```{r}
+# your code
+summarise(
+  group_by(starwars, homeworld),
+  median_mass = median(mass, na.rm = TRUE)
+)
+```
+
+
+## Your Turn
+
+c)  use `arrange()`, `summarise()` and `group_by()` display the average
+    mass by gender, in ascending order
+
+```{r}
+# your code
+arrange(
+  summarise(
+    group_by(starwars, gender),
+    avg_mass = mean(mass, na.rm = TRUE))
+  
+)
+```
+
+
+
+# Part II) More Practice
+
+::: {.callout-note}
+*The following sections in Part II **are optional** and you don't need
+to submit solutions for them. These additional sections are provided to
+give you more practice problems.*
+:::
+
+
+## Part II) More Practice
+
+a)  use `slice()` to subset `starwars` by selecting the last 5 rows.
+
+```{r}
+# your code
+slice_tail(starwars, n = 5)
+```
+
+
+## Part II) More Practice
+
+b)  Find out how to use the functions `slice_head()` to select the first
+    5 rows of `starwars`
+
+```{r}
+# your code
+slice_head(starwars, n = 5)
+```
+
+
+## Part II) More Practice
+
+c)  Find out how to use the functions `slice_tail()` to select the last
+    3 rows of `starwars`
+
+```{r}
+# your code
+slice_tail(starwars, n = 3)
+```
+
+
+## Part II) More Practice
+
+d)  use `filter()` to subset rows of individuals with brown hair color.
+
+```{r}
+# your code
+filter(starwars, hair_color == "brown")
+```
+
+
+## Part II) More Practice
+
+e)  use `"dplyr"` functions to display the names of individuals with
+    green skin color.
+
+```{r}
+# your code
+filter(starwars, skin_color == "green") |> select(name)
+```
+
+
+## Part II) More Practice
+
+f)  find how to select the name, height, and mass, of male individuals,
+    with brown or black hair color.
+
+```{r}
+# your code
+filter(starwars, sex == "male" & (hair_color == "brown" | hair_color == "black")) |> select(name, height, mass)
+```
+
+
+## Part II) More Practice
+
+g)  using the data frame `fem`, add a new variable `product` with the
+    product of `height` and `mass`.
+
+```{r}
+# your code
+mutate(fem, product = height * mass)
+```
+
+
+## Part II) More Practice
+
+h)  create a new data frame `fem3`, by adding columns `log_height` and
+    `log_mass` with the log transformations of `height` and `mass`.
+
+```{r}
+# your code
+fem3 = mutate(fem, log_height = log(height), log_mass = log(mass))
+```
+
+
+## Part II) More Practice
+
+i)  use `summarise()` to get the standard deviation of `mass`; the
+    argument `na.rm = TRUE` is your friend for removing missing values.
+
+```{r}
+# your code
+summarise(starwars, sd(mass, na.rm = TRUE))
+```
+
+
+## Part II) More Practice
+
+j)  obtain the mean and standard deviation of `height`, for female
+    characters; the argument `na.rm = TRUE` is your friend for removing
+    missing values.
+
+```{r}
+# your code
+filter(starwars, sex == "female") |> summarise(sd(height, na.rm = TRUE)) 
+```

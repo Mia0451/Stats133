@@ -1,0 +1,322 @@
+---
+title: "Lab 14"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: simplex
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)  # data science ecosystem
+library(rvest)      # for web scraping
+library(stringr)    # for string manipulation
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab14-template.qmd` to answer the questions.
+
+-   Rename this file as `lab14-first-last.qmd`, where `first` and `last` are your first and last names (e.g. `lab14-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`.
+
+-   Submit both your qmd and HTML files to the corresponding assignment submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive no credit.
+:::
+
+# Intro to Books to scrape
+
+Today's lab is inspired by a [tutorial](https://betterdatascience.com/r-web-scraping/) on Better Data Science. We're going to work with [Books to Scrape](http://books.toscrape.com/index.html), a website built to practice scraping.
+
+::: {.callout-note icon="false"}
+## Looking at source code
+
+Before we start, take a look at the source code for Books to Scrape. What kind of data is there? What might be useful to scrape?
+:::
+
+#### Your Answer (below this line):
+There are many genres, and there are many books for each genre. Each book has image, star rating, title, price, in-stock-or-not, buy button.
+
+## Importing HTML file
+
+We can import the HTML file for the webpage by simply using `read_html()`.
+
+```{r}
+url <- 'http://books.toscrape.com/catalogue/category/books_1/index.html'
+book_html <- read_html(url)
+```
+
+# Scraping Books to Scrape
+
+Now that we have the HTML file loaded into R, we can start to scrape some information from the webpage. 
+
+In class, you learned how to scrape using the `xpath` argument in `html_elements()`. Here, we'll use the `css` argument. Feel free to use whichever you prefer in your code. 
+
+## Scraping Book Genres
+
+First, let's look into the book genres. Looking at the HTML document, it appears that all genres are held in a link that is contained in an element with class 'side_categories'. To get all the genres, we can start by looking for HTML elements with class 'side_categories'. Then, we look for link elements (i.e. 'a' elements) within 'side_categories'. 
+
+To retrieve elements of a certain class, we put a period in front of the class name, as shown below. 
+
+```{r}
+book_html %>%
+  html_elements('.side_categories') %>%
+  html_elements('a') %>%
+  html_text2()
+```
+
+## Scraping Book Information
+
+Next, let's scrape information about the books on the website. Note that we cannot see all the books on one page. Each page of the website shows at most twenty books. This will be important later.
+
+We'll start by taking a look at the structure of book titles on a webpage (refer to Instructions HTML file).
+
+### Scraping Title
+
+The title for each book is contained in a header ('h3') with a link ('a'). With this information, we can perform a similar operation as with genres. 
+
+```{r}
+book_html %>% 
+  html_elements('h3') %>%
+  html_elements('a') %>%
+  html_text2()
+```
+
+It appears that books with longer titles are truncated. However, the full book title is an attribute of the link. If we want to get the full title, we can use `html_attr()` to retrieve the 'title' attribute.
+
+```{r}
+book_html %>% 
+  html_elements('h3') %>%
+  html_elements('a') %>%
+  html_attr('title')
+```
+
+### Scraping Price
+
+From the HTML file, we can see that the price of a product is contained in a paragraph('p') with class 'price_color'.
+
+```{r}
+book_html %>%
+  html_elements('.price_color') %>%
+  html_text2()
+```
+
+### Scraping Stock
+
+Similarly to price, stock is contained in a paragraph element with class 'instock availability'. We only need to refer to 'instock'. 
+```{r}
+book_html %>%
+  html_elements('.instock') %>%
+  html_text2()
+```
+
+### Scraping Ratings
+
+Finally, ratings are a bit more complex. The rating is encoded as a set of icons, but the class of that set of icons changes depending on the rating. For example, a five-star rating is contained in an element with class 'star-rating Five'. Therefore, we need to scrape the class of the rating rather than the value of the element.
+
+```{r}
+read_html(url) %>% 
+  html_elements('p.star-rating') %>% 
+  html_attr('class')
+```
+
+However, we only want the last word of the above strings. We can use `str_remove()` to get ride of 'star-rating ' in all our data. 
+
+```{r}
+read_html(url) %>% 
+  html_elements('p.star-rating') %>% 
+  html_attr('class') %>%
+  str_remove('star-rating ')
+```
+
+### Data Frame for Scraped Data
+
+We can put all of the data we've scraped into a data frame to make it easier to work with.
+
+```{r}
+title <- book_html %>% 
+  html_elements('h3') %>%
+  html_elements('a') %>%
+  html_attr('title')
+
+price <- book_html %>%
+  html_elements('.price_color') %>%
+  html_text2()
+
+stock <- book_html %>%
+  html_elements('.instock') %>%
+  html_text2()
+
+rating <- read_html(url) %>% 
+  html_elements('p.star-rating') %>% 
+  html_attr('class') %>%
+  str_remove('star-rating ')
+
+book_info <- data.frame(
+  Title = title,
+  Price = price,
+  Stock = stock,
+  Rating = rating
+)
+book_info
+```
+
+# Your Turn: More Scraping
+
+Now it's your turn! There's a lot left to be scraped on the website. 
+
+## Scraping Across Genre
+
+Scrape the information for books in three different genres (only the first page). Combine their information with into one data frame that also has a column for genre. 
+
+::: {.callout-note icon="false"}
+## Hint
+Use the url for a genre to scrape it's data, i.e. use the url you get when you click on the genre link. 
+:::
+
+```{r}
+# your code
+genres = c("Travel", "Mystery", "Historical Fiction")
+urls = c('https://books.toscrape.com/catalogue/category/books/travel_2/index.html', "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html", "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html")
+
+all_title = c()
+all_price = c()
+all_stock = c()
+all_rating = c()
+all_genre = c()
+
+for (i in 1:length(urls)) {
+  url <- urls[i]
+  book_html <- read_html(url)
+  
+  title <- book_html %>% 
+  html_elements('h3') %>%
+  html_elements('a') %>%
+  html_attr('title')
+
+  price <- book_html %>%
+  html_elements('.price_color') %>%
+  html_text2()
+
+  stock <- book_html %>%
+  html_elements('.instock') %>%
+  html_text2()
+
+  rating <- book_html %>% 
+  html_elements('p.star-rating') %>% 
+  html_attr('class') %>%
+  str_remove('star-rating ')
+  
+  all_title = c(all_title, title)
+  all_price = c(all_price, price)
+  all_stock = c(all_stock, stock)
+  all_rating = c(all_rating, rating)
+  all_genre = c(all_genre, rep(genres[i], length(title)))
+}
+
+book_info <- data.frame(
+  Title = all_title,
+  Price = all_price,
+  Stock = all_stock,
+  Rating = all_rating,
+  Genre = all_genre
+)
+book_info
+```
+
+
+## Scraping Across Pages
+
+The 'Sequential Art' genre has 75 books across four pages. Scrape the data for all Sequential Art books.
+
+::: {.callout-note icon="false"}
+## Hint
+Use the url for each page. It may be useful to build a for loop.
+:::
+
+```{r}
+# your code 
+base_url = "https://books.toscrape.com/catalogue/category/books/sequential-art_5/page-"
+pages = c("1.html", "2.html", "3.html", "4.html")
+
+all_title = c()
+all_price = c()
+all_stock = c()
+all_rating = c()
+
+for (page in pages) {
+  url <- paste(base_url, page, sep="")
+  book_html <- read_html(url)
+  
+  title <- book_html %>% 
+  html_elements('h3') %>%
+  html_elements('a') %>%
+  html_attr('title')
+
+  price <- book_html %>%
+  html_elements('.price_color') %>%
+  html_text2()
+
+  stock <- book_html %>%
+  html_elements('.instock') %>%
+  html_text2()
+
+  rating <- book_html %>% 
+  html_elements('p.star-rating') %>% 
+  html_attr('class') %>%
+  str_remove('star-rating ')
+  
+  all_title = c(all_title, title)
+  all_price = c(all_price, price)
+  all_stock = c(all_stock, stock)
+  all_rating = c(all_rating, rating)
+}
+
+book_info <- data.frame(
+  Title = all_title,
+  Price = all_price,
+  Stock = all_stock,
+  Rating = all_rating
+)
+book_info
+```
+
+## Scraping URLs
+
+The tutorial mentioned above scrapes urls for each book using the following code:
+
+```{r}
+urls <- read_html(url) %>%
+  html_nodes('.image_container') %>% 
+  html_nodes('a') %>% 
+  html_attr('href') %>% 
+  str_replace_all('../../../', '/')
+```
+
+How is this code scraping urls? Where is the url contained?
+
+#### Your answer (below this line):
+The code search node with class `image_container`, and have the inner node `a` and read the value of its `href` attribute, then do string replacement which replace `'../../../'` with `'/'`. One example of the result is "/scott-pilgrims-precious-little-life-scott-pilgrim-1_987/index.html"
+
+## What to do next?
+
+Now we have an abundance of data on books being 'sold' on this website. As noted on Books to Scrape, the data themselves are randomly generated and therefore meaningless. 
+
+But suppose that you scraped data from a website that actually sells books. What kind of analysis would you do? What kind of plots would you make? What would the variables be?
+
+::: {.callout-note icon="false"}
+## Note
+You do not need to actually do any analysis. Just explain what analysis you think would be interesting to perform. 
+:::
+
+#### Your answer (below this line):
+I would like to check which genre has the largest number of books. Then the price range for each genre. Also I want to check the rating summary for each genre.
+
+

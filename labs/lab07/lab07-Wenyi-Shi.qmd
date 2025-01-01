@@ -1,0 +1,683 @@
+---
+title: "Lab-7: Iterations and S&P 500 Data"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+old = options(pillar.sigfig = 5)  # to display decimals
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab07-template.qmd` to answer the questions.
+
+-   Rename this file as `lab07-first-last.qmd`, where `first` and `last` are your first and last names (e.g. `lab07-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive no credit.
+:::
+
+```{r message=FALSE}
+# packages
+library(tidyverse)  # pkgs for data science
+library(lubridate)  # for working with dates
+library(tidyquant)  # financial & quant functions
+```
+
+------------------------------------------------------------------------
+
+## Investment with variable rates of return
+
+In homework-1, you learned about the formula for computing the Future Value of an Ordinary Annuity (FVOA). This type of annuity calculation measures how much a series of fixed periodic contributions---made at the end of each period---would be worth at a specific date in the future when paired with a constant rate of return.
+
+**But what if the rate of return is not constant?**
+
+### Example: Gaston's Monthly Investments {#sec-for-loop1}
+
+Suppose Gaston decides to invest in some financial product that tracks the performance of a certain stock market index (e.g. S&P 500). To make things more concrete, let's assume that he contributes **\$100 at the end of every month**, from January to June in a given year. How much money would he have at the end of June?
+
+The answer to this question comes from the iterative process described below.
+
+Let $contrib = \$100$ be the monthly contribution (at the end of every month).
+
+Let $r_t$ be the rate of return in month $t = 1, 2, \dots, 6$.
+
+Let $bal_t$ be the balance amount at the end of the month $t = 1, 2, \dots, 6$.
+
+**Iterative process:**
+
+-   Balance at the end of Jan: $\quad bal_1 = contrib$
+
+-   Balance at the end of Feb: $\quad bal_2 = bal_1 \times (1 + r_2) + contrib$
+
+-   Balance at the end of Mar: $\quad bal_3 = bal_2 \times (1 + r_3) + contrib$
+
+-   Balance at the end of Apr: $\quad bal_4 = bal_3 \times (1 + r_4) + contrib$
+
+-   Balance at the end of May: $\quad bal_5 = bal_4 \times (1 + r_5) + contrib$
+
+-   Balance at the end of Jun: $\quad bal_6 = bal_5 \times (1 + r_6) + contrib$
+
+\
+
+Consider the following (hypothetical) monthly rates of return:
+
+```{r}
+# hypothetical monthly rates of return Jan-Jun
+r = c(
+  'Jan' = 0.02, 
+  'Feb' = 0.05, 
+  'Mar' = -0.01, 
+  'Apr' = 0.03, 
+  'May' = 0.01,
+  'Jun' = -0.02)
+
+r
+```
+
+Here's a naive approach to compute the balance amounts at the end of every month. Notice that the January rate is not taken into account since the first contribution occurs at the end of this month.
+
+```{r}
+# ==============================================
+# Naive approach (just for sake of illustration)
+# Don't write code like this (use loops instead)
+# ==============================================
+
+# monthly contribution (at the end of every month)
+contrib = 100
+
+# monthly balance values
+bal_1 = contrib                       # end of Jan
+bal_2 = bal_1 * (1 + r[2]) + contrib  # end of Feb
+bal_3 = bal_2 * (1 + r[3]) + contrib  # end of Mar
+bal_4 = bal_3 * (1 + r[4]) + contrib  # end of Apr
+bal_5 = bal_4 * (1 + r[5]) + contrib  # end of May
+bal_6 = bal_5 * (1 + r[6]) + contrib  # end of Jun
+
+# store in a vector 'balance'
+balance = c(bal_1, bal_2, bal_3, bal_4, bal_5, bal_6)
+names(balance) = month.abb[1:6]
+balance
+```
+
+### Example: Using a `for()` loop {#sec-for-loop2}
+
+We can implement the previous iterative process with the following `for()` loop. Keep in mind that the code below is fairly verbose because of all the comments added to provide clear descriptions. In practice, you won't really need to add that many comments.
+
+```{r}
+# monthly contribution (at the end of every month)
+contrib = 100
+
+# auxiliary variable 'bal' (to be updated in loop)
+# first contribution in January
+bal = contrib
+
+# output vector, initialized full of zeros
+# (to be updated through each iteration)
+balance = rep(0, length(r))
+
+# first balance is the one at the end of Jan
+balance[1] = bal
+
+# iterations (from Feb to Jun)
+for (m in 2:6) {
+  # compute new balance value
+  bal = bal * (1 + r[m]) + contrib
+  # update vector 'balance'
+  balance[m] = bal
+}
+
+# assemble results in a tibble
+balance_tbl = tibble(
+  'time' = 1:6,
+  'month' = month.abb[1:6],
+  'balance' = balance
+)
+
+balance_tbl
+```
+
+\
+
+## Your Turn: Contributions at the end of the month
+
+Consider the following vector `rr` of random monthly rates of return in a given year (from Jan to Dec):
+
+```{r}
+set.seed(12345) # for replication purposes
+
+# random rates
+rr = round(rnorm(n = 12, mean = 0.05, sd = 0.04), 2)
+names(rr) = month.abb
+rr
+```
+
+a)  **Loop:** With the above random rates, and assuming a monthly contribution (at the end of each month) of $500$, write code to implement a `for()` loop that computes the monthly balance at the end of each month. Display the output in a tibble `balance_tbl2` with columns `time`, `month` and `balance`.
+
+```{r}
+# your code
+contrib = 500
+bal = contrib
+balance = rep(0, length(rr))
+
+# first balance is the one at the end of Jan
+balance[1] = bal
+
+# iterations (from Feb to Jun)
+for (m in 2:12) {
+  # compute new balance value
+  bal = bal * (1 + rr[m]) + contrib
+  # update vector 'balance'
+  balance[m] = bal
+}
+
+# assemble results in a tibble
+balance_tbl2 = tibble(
+  'time' = 1:12,
+  'month' = month.abb[1:12],
+  'balance' = balance
+)
+
+balance_tbl2
+```
+
+\
+
+b)  **Graphic:** Refer to your table `balance_tbl2`. Use `ggplot` commands to visualize the balance amounts over time.
+
+```{r}
+# your code
+ggplot(data = balance_tbl2, aes(x = 1:nrow(balance_tbl2), y = balance)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Balance at the end of each month when deposit at the end of the month",
+       x = "Month",
+       y = "Balance") +
+  theme_minimal()
+```
+
+<br>
+
+## Your Turn: Contributions at the beginning of the month
+
+Instead of making contributions at the end of the month let's assume that contributions are made **at the beginning of the month**. Repeat the previous parts a) and b), but now with contributions made at the start of each month.
+
+**To be clear:** we still want to obtain the [balance amounts at the end of every month]{style="color: blue;"}, but now making [contributions at the beginning of each month]{style="color: red;"}.
+
+a)  **Loop:** With the same random rates `rr`, and assuming a monthly contribution (at the start of each month) of $500$, write code to implement a `for()` loop that computes the monthly balance at the end of each month. Display the output in a tibble `balance_tbl3` with columns `time`, `month` and `balance`.
+
+```{r}
+# your code
+contrib = 500
+bal = contrib
+balance = rep(0, length(rr))
+
+bal = 0
+for (m in 1:12) {
+  bal = (bal + contrib) * (1 + rr[m])
+  balance[m] = bal
+}
+
+# assemble results in a tibble
+balance_tbl3 = tibble(
+  'time' = 1:12,
+  'month' = month.abb[1:12],
+  'balance' = balance
+)
+
+balance_tbl3
+```
+
+\
+
+b)  **Graphic:** Refer to your table `balance_tbl3`. Use `ggplot` commands to visualize the balance amounts over time.
+
+```{r}
+# your code
+ggplot(data = balance_tbl3, aes(x = 1:nrow(balance_tbl3), y = balance)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Balance at the end of each month when deposit at the start of the month",
+       x = "Month",
+       y = "Balance") +
+  theme_minimal()
+```
+
+------------------------------------------------------------------------
+
+## Analyzing returns of S&P 500 Index
+
+Let's now use real rates of return from the S&P 500 stock market index. In this part we'll carry out two analyses:
+
+1)  A simple exploratory analysis of S&P 500 Index annual returns.
+
+2)  Monthly returns of a hypothetical investment that tracks the performance of the S&P 500, over the period 2019-2023.
+
+#### What is the S&P 500? {.unnumbered}
+
+According to Wikipedia, <https://en.wikipedia.org/wiki/S%26P_500>:
+
+> The **Standard and Poor's 500**, or simply the **S&P 500**, is a stock market index tracking the stock performance of 500 of the largest companies listed on stock exchanges in the United States. It is one of the most commonly followed equity indices and includes approximately 80% of the total market capitalization of U.S. public companies, with an aggregate market cap of more than \$43 trillion as of January 2024
+
+#### Examples of Investments tracking the S&P 500 {.unnumbered}
+
+Also from Wikipedia:
+
+> Index funds, including mutual funds and exchange-traded funds (ETFs), can replicate, before fees and expenses, the performance of the index by holding the same stocks as the index in the same proportions.
+
+Popular examples of index funds that replicate the performance of the index are:
+
+-   Vanguard's: VOO
+-   iShares: IVV
+-   State Street Corporation: SPY
+
+------------------------------------------------------------------------
+
+## S&P 500 Historical daily data in 2021
+
+To get S&P 500 data we are going to use the function `tq_get()` from the package `"tidyquant"`. This function allows you to get historical (daily) data based on a given ticker symbol: e.g. `"^GSPC"` (S&P500 index).
+
+For instance, here's how to get the daily data from year 2021:
+
+```{r}
+sp500_2021 = tq_get("^GSPC", from = "2021-01-01", to = "2021-12-31")
+```
+
+Once we have downloaded the data, we can take a look at its `head()` and `tail()`:
+
+```{r}
+# first 5 rows
+head(sp500_2021, n = 5)
+
+# last 5 rows
+tail(sp500_2021, n = 5)
+```
+
+### Description of Columns
+
+-   `symbol`: Name of ticker symbol.
+
+-   `date`: Date of the trade session (yyyy-mm-dd). Keep in mind that the major stock market exchanges in the U.S. are open only during weekdays (M-F from 9:30am to 4pm ET), excluding holidays.
+
+-   `open`: Value at which trade of the index starts at the beginning of the trade session.
+
+-   `high`: Highest value at which the index has traded during a trade session.
+
+-   `low`: Lowest value at which the index has traded during a trade session.
+
+-   `close`: Value at which the index has traded at the end of the trade session.
+
+-   `volume`: Measures the number of shares traded.
+
+-   `adjusted`: Adjusted closing value. Note: **ignore this column**.
+
+::: {.callout-note icon="false"}
+## Important Note
+
+If you download more historical data, you'll notice some issues:
+
+-   Before 1962, all data in columns `open`, `high`, `low` and `close` contain the same value.
+
+-   Only in 1962 do `high`, `low`, and `close` start to differ (with `open` being 0).
+
+The main explanation for these issues is related to the use of computerized order-recording of trades which started to emerge in the early sixties.
+:::
+
+<br>
+
+### Your Turn: Timeline of S&P-500 in 2021
+
+With `sp500_2021`, use ggplot commands to make a graphic that lets you visualize a timeline for this stock market index.
+
+-   Map `date` to the x-axis.
+-   Map `close` to the y-axis.
+-   Use a `geom_line()` layer.
+-   Add a smoother---via `geom_smooth()`---to see the annual trend.
+-   Include a title and axis labels.
+
+```{r}
+# your code
+ggplot(data = sp500_2021, aes(x = date, y = close)) +
+  geom_line() +
+  geom_smooth() +
+  labs(title = "SP500 trend in year 2021",
+       x = "Date",
+       y = "Close value") +
+  theme_minimal()
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+## A few functions to manipulate Dates
+
+To continue our exploratory analysis of the downloaded data, first we need to review some useful operations---and functions behind them---to work with **dates** in R.
+
+The `"lubridate"` package comes with a large number of useful functions that let you handle dates. Let's review the following:
+
+-   `year(x)`: extracts the year of a date `x`
+
+-   `month(x)`: extracts the month of a date `x`
+
+-   `day(x)`: extracts the day of a date `x`
+
+-   `wday(x, label)`: extracts the week-day (either number or name) of a date `x`
+
+-   `floor_date(x, unit)`: floor method for a date `x`
+
+-   `ceiling_date(x, unit)`: ceiling method for a date `x`
+
+\
+
+### Example with functions `year()` and `floor_date()`
+
+Here's a toy example of what `year()` and `floor_date()` do to date values:
+
+```{r}
+# demo of some lubridate functions
+sp500_2021 |>
+  slice(1:5) |>
+  select(date) |>
+  mutate(
+    year = year(date),
+    floor = floor_date(date, unit = 'month')
+  )
+```
+
+<br>
+
+### Your Turn: Apply more lubridate functions
+
+Like in the previous example, use `mutate()` to see what functions `month(x)`, `day(x)`, `wday(x)`, `wday(x, label = TRUE)`, and `ceiling_date(x, unit = 'month')` do on a date `x`.
+
+```{r}
+# your code
+sp500_2021 |>
+  slice(1:5) |>
+  select(date) |>
+  mutate(
+    month = month(date),
+    day = day(date),
+    weekday = wday(date),
+    weekday_2 = wday(date, label = TRUE),
+    ceiling = ceiling_date(date, unit = 'month')
+  )
+```
+
+------------------------------------------------------------------------
+
+## Computing Returns
+
+Having reviewed some `"lubridate"` functions, let's now talk about computing returns. Because we are going to focus on market returns, this means we need to be able to calculate returns between different dates.
+
+**How to compute returns?** Assume you have an asset with a price (or value) $p_1$ at time $t_1$, and another price (or value) $p_2$ at a later time $t_2$. The return $r$ in the time period between $t_1$ and $t_2$ is given by:
+
+$$
+r = \frac{p_2 - p_1}{p_1}
+$$
+
+For example, say you invest \$100 today (time $t_1$) and a year from now you sell your investment for \$150 (time $t_2$). The annual return on your investment will be 50%:
+
+$$
+r = \frac{150 - 100}{100} = \frac{50}{100} = 0.5 = 50\%
+$$
+
+Alternatively, say you invest \$100 today (time $t_1$) and a year from now you sell your investment for \$70 (time $t_2$). The annual return on your investment will be -30%:
+
+$$
+r = \frac{70 - 100}{100} = \frac{-30}{100} = -0.3 = -30\%
+$$
+
+<br>
+
+### Subsetting 2021 data (a few months)
+
+For illustration purposes, let's consider the first 82 rows of `sp500_2021` and columns `date`, `open`, and `close`. In addition, let's `mutate()` a column `"month"`, and store this data set in its own table `sp500_2021_subset`
+
+```{r}
+# daily returns from Jan to Apr, 2021
+sp500_2021_subset = sp500_2021 |>
+  slice(1:82) |>
+  select(date, open, close) |>
+  mutate(month = month(date))
+
+head(sp500_2021_subset)
+```
+
+### Example: Return in January (2021)
+
+Say we are interested in computing the return during the month of January. To do this we need the **first opening value** of the month (3764.61, Jan-04) and the **last closing value** of the month (3714.24, Jan-29):
+
+$$
+\text{return}_{Jan} = \frac{3714.24 - 3764.61}{3764.61} \approx -0.0133
+$$
+
+How can we get the **first** `open` value and the **last** `close` value? Meet `"dplyr"` functions `first()` and `last()`:
+
+```{r}
+sp500_2021_january_returns = sp500_2021_subset |>
+  filter(month == 1) |>
+  summarise(
+    first = first(open),
+    last = last(close),
+    return = (last - first) / first)
+
+sp500_2021_january_returns
+```
+
+### Example: Returns in Jan-Apr (2021)
+
+Going back to the `sp500_2021_subset` data, to get the monthly returns we just need to `group_by(month)`, and then apply a similar `summarise()` command as in the preceding example:
+
+```{r}
+sp500_2021_subset_monthly_returns = sp500_2021_subset |>
+  group_by(month) |>
+  summarise(
+    first = first(open),
+    last = last(close),
+    return = (last - first) / first)
+
+sp500_2021_subset_monthly_returns
+```
+
+<br>
+
+### Your Turn: Monthly Returns in 2021
+
+Use dplyr commands to compute the monthly returns for all months in 2021, getting a table like in the preceding example. Name this table `sp500_2021_monthly_returns`, and display its contents.
+
+```{r}
+# your code
+sp500_2021_monthly_returns = sp500_2021 |>
+  select(date, open, close) |>
+  mutate(month = month(date)) |>
+  group_by(month) |>
+  summarise(
+    first = first(open),
+    last = last(close),
+    return = (last - first) / first)
+
+sp500_2021_monthly_returns
+```
+
+------------------------------------------------------------------------
+
+## Gaston's Mothly Investments in an S&P 500 Index Fund
+
+Suppose Gaston decides to invest in an index fund that tracks the performance of the S&P 500 index. Specifically, he contributes \$500 at the end of every month during 2021. How much money would he have at the end of the year?
+
+The answer to this question comes from the iterative process described below. BTW: This is the same process described in @sec-for-loop1.
+
+Let $contrib = \$500$ be the monthly contribution (at the end of every month).
+
+Let $r_t$ be the rate of return in month $t = 1, 2, \dots, 12$.
+
+Let $bal_t$ be the balance amount at the end of month $t = 1, 2, \dots, 12$.
+
+**Iterative process:**
+
+-   Balance at the end of Jan: $\quad bal_1 = contrib$
+
+-   Balance at the end of Feb: $\quad bal_2 = bal_1 \times (1 + r_2) + contrib$
+
+-   Balance at the end of Mar: $\quad bal_3 = bal_2 \times (1 + r_3) + contrib$
+
+-   *ETC*
+
+-   Balance at the end of Nov: $\quad bal_{11} = bal_{10} \times (1 + r_{11}) + contrib$
+
+-   Balance at the end of Dec: $\quad bal_{12} = bal_{11} \times (1 + r_{12}) + contrib$
+
+<br>
+
+### Your Turn: For Loop {#sec-for-loop3}
+
+a)  Similar to @sec-for-loop2, write a `for` loop to compute the monthly balance amounts of Gaston's investment strategy. Assemble a table (e.g. data.frame or tibble) `investment_2021` with columns `time`, `month`, `return`, and `balance`. When printing `investment_2021`, it should look more or less like the following table.
+
+```         
+   time   month         return    balance
+      1     Jan   -0.013379903    500.000
+      2     Feb    0.021435631   1010.718
+      3     Mar    0.033930916   1545.012
+      4     Apr    0.047182637   2117.910
+      5     May    0.002893593   2624.039
+      6     Jun    0.019205406   3174.434
+      7     Jul    0.021979940   3744.208
+      8     Aug    0.026281823   4342.613
+      9     Sep   -0.048856160   4630.449
+     10     Oct    0.066761416   5439.585
+     11     Nov   -0.009460792   5888.122
+     12     Dec    0.038217911   6613.154
+```
+
+```{r}
+# your code
+contrib = 500
+bal = contrib
+rr = pull(sp500_2021_monthly_returns, 'return')
+balance = rep(0, length(rr))
+
+# first balance is the one at the end of Jan
+balance[1] = bal
+
+# iterations (from Feb to Jun)
+for (m in 2:12) {
+  # compute new balance value
+  bal = bal * (1 + rr[m]) + contrib
+  # update vector 'balance'
+  balance[m] = bal
+}
+
+# assemble results in a tibble
+investment_2021 = tibble(
+  'time' = 1:12,
+  'month' = month.abb[1:12],
+  'return' = rr,
+  'balance' = balance
+)
+
+investment_2021
+```
+
+<br>
+
+c)  With `investment_2021`, use ggplot commands to make a timeline that lets you visualize the monthly balance amounts.
+
+```{r}
+# your code
+ggplot(data = investment_2021, aes(x = 1:nrow(investment_2021), y = balance)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Balance at the end of each month when deposit at the end of the month 2021",
+       x = "Month",
+       y = "Balance") +
+  theme_minimal()
+```
+
+------------------------------------------------------------------------
+
+## Five year Investment
+
+Let's consider Gaston's investing strategy but this time we'll extend it for the five year period comprised from January 2019 to December 2023.
+
+### Your Turn: Challenge
+
+Your goal is to go over the main steps that we tackled in the previous sections but now expanding the time horizon of the data (Jan-2019 to Dec-2023). In other words, you will have to carry out the following steps:
+
+1)  Use `tq_get()` to download S&P 500 historical data from `"2019-01-01"` to `"2023-12-31"`.
+
+2)  Use dplyr commands to obtain a table of monthly returns for every year. **Hints**:
+
+    2.1) you need to `mutate()` columns `year` and `month`,
+
+    2.2) and then `group_by()` both `year` and `month` before the `summarise()` command.
+
+3)  Write a `for` loop to compute balance amounts. Recall that the starting balance is in Jan of 2019, and the last balance is the one at the end of December 2023.
+
+4)  Assemble a table like the one in @sec-for-loop2 part b) containing columns `time`, `month`, `return`, and `balance`.
+
+    4.1) Recall that you can use `rep(month.abb, times = 5)` to make labels for the months.
+
+5)  Use ggplot commands to make a timeline that lets you visualize the\
+    balance amounts in this scenario.
+
+```{r}
+# your code
+sp500_2019_2023 = tq_get("^GSPC", from = "2019-01-01", to = "2023-12-31")
+sp500_2019_2023_monthly_returns = sp500_2019_2023 |>
+  select(date, open, close) |>
+  mutate(year = year(date), month = month(date)) |>
+  group_by(year, month) |>
+  summarise(
+    first = first(open),
+    last = last(close),
+    return = (last - first) / first,
+    .groups = "drop")
+
+sp500_2019_2023_monthly_returns
+
+contrib = 500
+bal = contrib
+rr = pull(sp500_2019_2023_monthly_returns, 'return')
+balance = rep(0, length(rr))
+
+# first balance is the one at the end of Jan
+balance[1] = bal
+
+# iterations (from Feb to Jun)
+for (m in 2:length(rr)) {
+  # compute new balance value
+  bal = bal * (1 + rr[m]) + contrib
+  # update vector 'balance'
+  balance[m] = bal
+}
+
+# assemble results in a tibble
+investment_2019_2023 = tibble(
+  'time' = 1:length(rr),
+  'month' = rep(month.abb, times = 5),
+  'return' = rr,
+  'balance' = balance
+)
+
+investment_2019_2023
+
+ggplot(data = investment_2019_2023, aes(x = 1:nrow(investment_2019_2023), y = balance)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Balance at the end of each month (2019 ~ 2023)",
+       x = "Month",
+       y = "Balance") +
+  theme_minimal()
+```

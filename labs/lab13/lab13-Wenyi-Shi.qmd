@@ -1,0 +1,353 @@
+---
+title: "Lab-13: Web Technologies"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)   # ecosystem of data science packages
+library(xml2)        # for working with XML data
+library(jsonlite)    # for working with JSON data
+library(leaflet)     # web-interactive maps
+```
+
+# Introduction
+
+In this lab, we'll try to scrape data from the web. The lab is purposely 
+somewhat unstructured.
+
+First, try to answer this question in your own words:
+
+
+::: callout-note
+## What is an API? Please give two examples.
+
+1, API is something I can get data from, such as https://reqres.in/
+
+2, API is a function I can call which I need to provide parameter to specify the data I want, and it returned the data
+:::
+
+
+We will use the BART Legacy API, from class, to get some practice using an API 
+to get, and maybe plot, some interesting data.
+
+
+-----
+
+
+# Understanding BART Legacy API
+
+If you haven't already, look at the following two links for information on the 
+BART API.
+
+Link 1: A basic about page for the API <br>
+<https://www.bart.gov/schedules/developers/api>
+
+Link 2: The documentation for the API <br>
+<https://api.bart.gov/docs/overview/index.aspx>
+
+
+APIs often have documentation you are forced to navigate, which can be slightly
+different for each API.
+
+
+## Your Turn: List of Bart Stations
+
+Suppose you need to figure out how to use the BART Legacy API to find a 
+**list of all BART stations**. To learn how to get it, you need to read the
+documentation about how to get "list of all BART stations".
+
+Try to browse Link 2 and find the URL to the documentation *yourself*, before 
+checking the answer.
+
+(Have you found it? [The documentation is here](https://api.bart.gov/docs/stn/stns.aspx).)
+
+In the next question, address each section of the documentation separately. 
+There are three main ones, Inputs, Results, and Usage, of which Usage is the
+most important.
+
+
+::: callout-note
+## Please describe what each section of the documentation is about.
+
+Each section in [Station Information](https://api.bart.gov/docs/stn/) describe different cmd which we can use to call API and get corresponding data.
+:::
+
+
+-----
+
+
+# Getting access to the API
+
+In APIs, usually some kind of **key** is required in order to get access to the
+service. Usually you are required to register for your own, personal key, but 
+the BART API has a key anyone can use.
+
+
+::: callout-note
+## For the BART API, find the key. What is it?
+
+MW9S-E7SL-26DU-VV8V
+:::
+
+
+::: callout-note
+## Why do APIs require keys such as this?
+
+Key is used for applying access restriction. No one are supposed to call API freely.
+:::
+
+
+-----
+
+
+# Example: Downloading a list of all Bart stations
+
+We'll give you code that can be used to generate a table of all BART stations, 
+containing columns for their `name`, `abbr` (abbreviation), `city`, `address`, 
+`longitude` and `latitude`
+
+__Important Note__. As provided, the code doesn't work; the key is purposely 
+omitted. Please reinsert it to get the code to work.
+
+```{r}
+# Assemble the URL with query fields
+# Please update "key" with correct value!!!
+base_url = "https://api.bart.gov/api/stn.aspx?"
+cmd = "cmd=stns"
+key = "key=MW9S-E7SL-26DU-VV8V"
+json = "json=y"
+query = paste(cmd, key, json, sep = '&')
+stn_url = paste0(base_url, query)
+ 
+
+# Import JSON data
+bart_stations = read_json(stn_url)
+
+# Get number of stations
+stn_lst = bart_stations$root$stations$station
+
+# Reshape stations information into data table
+stations_table = bind_rows(stn_lst)
+
+stations_dat = stations_table |>
+  select(name, abbr, city, address, gtfs_longitude, gtfs_latitude) |>
+  mutate(longitude = as.numeric(gtfs_longitude), 
+         latitude = as.numeric(gtfs_latitude))
+
+stations_dat
+```
+
+
+::: callout-note
+## What kind of object is `stn_lst`?
+
+`stn_list` is a list of list. Each inner list actually contains named values for single station.
+:::
+
+
+## Mapping Bart stations
+
+The following code lets you create a leaflet map to display the location of
+BART stations. As you can tell, the chunk needs to be _activated_ by switching
+its option to `eval = TRUE`
+
+```{r eval = TRUE}
+# evaluate this chunk!!!
+stations_dat |>
+leaflet() |>
+  addProviderTiles(provider = "CartoDB.Positron") |>
+  addCircles(lng = ~longitude,
+             lat = ~latitude,
+             label = ~name)
+```
+
+
+-----
+
+
+# BART Fares
+
+The tutorial is over. Now, let's get data about the **fares** for going from
+Downtown Berkeley to all other stations.
+
+Look at the API's documentation on **Schedule Information**: <br>
+<https://api.bart.gov/docs/sched/index.aspx>
+
+Specifically, read how to use the API command to request the fare for a trip 
+between two stations: <br>
+<https://api.bart.gov/docs/sched/fare.aspx>
+
+
+## Sample Query URL
+
+The following chunk is one suggestion to assemble the string for the URL
+to request the fare between two stations. As you can tell, there are various
+(incomplete) commands with `...`. You'll have to replace them with correct 
+values to get a sample URL.
+
+```{r eval = FALSE}
+# Assemble the URL with query fields
+sched_url = "https://api.bart.gov/api/sched.aspx?"
+
+# Please update all  "..."  with appropriate values!!!
+cmd = "cmd=..."
+orig = "orig=..."
+dest = "dest=..."
+date = "date=..."
+key = "key=..."
+json = "json=y"
+
+query = paste(cmd, orig, dest, date, key, json, sep = '&')
+
+fare_url = paste0(sched_url, query)
+```
+
+## Your Turn: Fares from DBRK to other stations
+
+Using the information at your disposal, the goal is to make a data frame that 
+contains:
+
+1. the `name`, `abbr` (abbreviation), `longitude`, and `latitude` of each 
+station, and 
+
+2. the standard `fare` for going from Downtown Berkeley to that station. 
+(You get an error if you try to get the fare from DBRK to DBRK, so just set it 
+to zero.)
+
+This means that you will have to write a loop to get the fare between DBRK
+and all other stations.
+
+**Be sure to print every row so we can see it.**
+
+```{r}
+# Assemble the URL with query fields
+sched_url = "https://api.bart.gov/api/sched.aspx?"
+
+# Please update all  "..."  with appropriate values!!!
+cmd = "cmd=fare"
+orig = "orig=DBRK"
+date = "date=now"
+key = "key=MW9S-E7SL-26DU-VV8V"
+json = "json=y"
+
+fees = rep(0, nrow(stations_dat))
+
+for (i in 1:nrow(stations_dat)) {
+  dest = stations_dat[i,][["abbr"]]
+  fee = 0
+  if (dest != "DBRK") {
+    dest_arg = paste("dest=", dest, sep="")
+    query = paste(cmd, orig, dest_arg, date, key, json, sep = '&')
+    fare_url = paste0(sched_url, query)
+    fare = read_json(fare_url)
+    fee = fare$root$trip$fare
+  }
+  
+  fees[i] = as.numeric(fee)
+}
+
+station_fares = cbind(stations_dat, fare = fees) |>
+  select(name, abbr, longitude, latitude, fare)
+
+station_fares
+```
+
+
+For confirmation purposes (to make sure you have the right values), the correct 
+abbreviation and fare from DBRK values are included below (fares as of April 2024):
+
+```{r eval = FALSE, echo = FALSE}
+fares = read_csv("lab13-fares_from_DBRK.csv")
+```
+
+| abbr | fare_from_DBRK |
+|------|------|
+| 12TH | 2.30 |
+| 16TH | 4.85 |
+| 19TH | 2.30 |
+| 24TH | 4.90 |
+| ANTC | 6.55 |
+| ASHB | 2.30 |
+| BALB | 5.20 |
+| BAYF | 3.90 |
+| BERY | 7.20 |
+| CAST | 4.25 |
+| CIVC | 4.75 |
+| COLS | 3.05 |
+| COLM | 5.30 |
+| CONC | 4.75 |
+| DALY | 5.30 |
+| DBRK | 0    |
+| DUBL | 5.55 |
+| DELN | 2.30 |
+| PLZA | 2.30 |
+| EMBR | 4.75 |
+| FRMT | 5.55 |
+| FTVL | 2.70 |
+| GLEN | 5.10 |
+| HAYW | 4.25 |
+| LAFY | 3.65 |
+| LAKE | 2.30 |
+| MCAR | 2.30 |
+| MLBR | 6.20 |
+| MLPT | 6.90 |
+| MONT | 4.75 |
+| NBRK | 2.30 |
+| NCON | 5.00 |
+| OAKL | 10.15 |
+| ORIN | 2.90 |
+| PITT | 5.60 |
+| PCTR | 5.80 |
+| PHIL | 4.30 |
+| POWL | 4.75 |
+| RICH | 2.30 |
+| ROCK | 2.30 |
+| SBRN | 5.80 |
+| SFIA | 11.25 |
+| SANL | 3.60 |
+| SHAY | 4.60 |
+| SSAN | 5.50 |
+| UCTY | 5.15 |
+| WCRK | 4.10 |
+| WARM | 6.05 |
+| WDUB | 5.35 |
+| WOAK | 2.35 |
+
+
+-----
+
+
+## Your Turn: Map of Fares
+
+It would be nice if you could plot a map to display the location of each BART 
+station, color coding them based on the fares from Downtown Berkeley (`DBRK`).
+
+Your map could look something like the image below (btw: the circles are colored
+using the `"viridis"` palette in reverse order).
+
+_Hint_: To get a nice color palette to color-code the circles in leaflet, take
+a look at the following link: 
+<https://rstudio.github.io/leaflet/articles/colors.html>
+
+```{r}
+# ... your code here
+pal <- colorBin(c("red", "green", "blue"), 1:15)
+
+station_fares |>
+leaflet() |>
+  addProviderTiles(provider = "CartoDB.Positron") |>
+  addCircles(lng = ~longitude,
+             lat = ~latitude,
+             color = ~pal(fare),
+             label = ~name)
+```
+
+![](lab13-plot-example.png)

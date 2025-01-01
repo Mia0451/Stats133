@@ -1,0 +1,390 @@
+---
+title: "Lab-5a: Graphics with ggplot2"
+subtitle: "Stat 133"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab05-template.qmd` to answer the questions.
+
+-   Rename this file as `lab05-first-last.qmd`, where `first` and `last` are your first and last names (e.g. `lab05-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive no credit.
+:::
+
+## `"ggplot2"` cheatsheet {.unnumbered}
+
+While you work on this lab, ppen the ggplot2 cheatsheet:
+
+<a href="https://stat133.berkeley.edu/fall-2024/cheatsheets/ggplot2-cheatsheet-2.1.pdf" target="_blank">https://stat133.berkeley.edu/fall-2024/cheatsheets/ggplot2-cheatsheet-2.1.pdf</a>
+
+------------------------------------------------------------------------
+
+# Visualizing Data Frames
+
+In this lab, you will start creating graphics in a fairly consistent and visually pleasing way with the *tidyverse* package `"ggplot2"`.
+
+## Data `starwars`
+
+The data set for this lab has to do with Star Wars characters: `starwars`. This dataset is part of the *tidyverse* package `dplyr`. So, assuming that you loaded `"tidyverse"`, then simply type the name of the object: `starwars`
+
+```{r read}
+# assuming you loaded dplyr ...
+starwars
+```
+
+------------------------------------------------------------------------
+
+# First contact with `ggplot()`
+
+The package `"ggplot2"` is probably the most popular package in R to create *beautiful* static graphics. Compared to the functions in the base package `"graphics"`, the package `"ggplot2`" follows a somewhat different philosophy, and it tries to be more consistent and modular as possible.
+
+-   The main function in `"ggplot2"` is `ggplot()`
+
+-   The main input to `ggplot()` is a data frame (or also a tibble) object.
+
+-   You can use the internal function `aes()` to specify what columns of the data frame will be used for the graphical elements of the plot.
+
+-   You must specify what kind of *geometric objects* or **geoms** will be displayed: e.g. `geom_point()`, `geom_bar()`, `geom_boxpot()`.
+
+-   Pretty much anything else that you want to add to your plot is controlled by auxiliary functions, especially those things that have to do with the format, rather than the underlying data.
+
+-   The construction of a ggplot is done by *adding layers* with the `+` operator.
+
+## Scatterplots
+
+Let's start with a scatterplot of `height` and `mass`
+
+```{r scatter1}
+# scatterplot (option 1)
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass))
+```
+
+-   `ggplot()` creates an object of class `"ggplot"`
+
+-   the main input for `ggplot()` is `data` which must be a data frame
+
+-   then we use the `"+"` operator to add a layer
+
+-   the geometric object (geom) are points: `geom_points()`
+
+-   `aes()` is used to specify the `x` and `y` coordinates, by taking columns `points` and `salary` from the data frame
+
+BTW: The same scatterplot can also be created with this alternative, and more common use of `ggplot()`
+
+```{r eval = FALSE}
+# scatterplot (option 2)
+ggplot(data = starwars, 
+       mapping = aes(x = height, y = mass)) +
+  geom_point()
+```
+
+## Your Turn
+
+Make a scatter plot of `birth_year` (x-axis), and `height` (y-axis), using two different commands:
+
+a)  specifying the `mapping` at the **global** level, i.e. inside `ggplot()`
+
+b)  specifying the `mapping` at the **local** level, i.e. inside `geom_point()`
+
+```{r}
+# your code
+# a
+ggplot(data = starwars, mapping = aes(x = birth_year, y = height)) + geom_point()
+
+# b
+ggplot(data = starwars) + geom_point(mapping = aes(x = birth_year, y = height))
+```
+
+# Adding color
+
+Let's go back to the scatter plot of `height` and `mass`. Say you want to color code the points in terms of `sex`. This can be done by specifying another mapping, in this case mapping `sex` to the `color` attribute.
+
+```{r scatter2}
+# colored scatterplot 
+ggplot(data = starwars, aes(x = height, y = mass)) +
+  geom_point(aes(color = sex))
+```
+
+BTW: The same scatterplot can also be created with this alternative command:
+
+```{r eval = FALSE}
+# colored scatterplot (option 2)
+ggplot(data = starwars, aes(x = height, y = mass, color = sex)) +
+  geom_point()
+```
+
+## Your Turn
+
+Inspect the following commands, and try to guess---without executing the code---which one will allow you to obtain a graphic like the preceding scatter plot. To see whether your guess is correct, execute the code to find out.
+
+```{r eval = FALSE}
+# option a)
+# Working
+ggplot(data = starwars, 
+       mapping = aes(x = height, y = mass, color = sex)) +
+  geom_point()
+```
+
+```{r eval = FALSE}
+# option b)
+# Working
+ggplot(starwars, 
+       aes(x = height, y = mass, color = sex)) +
+  geom_point()
+```
+
+```{r eval = FALSE}
+# option c)
+# Working
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass, color = sex))
+```
+
+```{r eval = FALSE}
+# option d), 
+# NOT working
+ggplot(data = starwars, aes(x = height, y = mass)) +
+  geom_point(color = sex)
+```
+
+```{r eval = FALSE}
+# option e)
+# NOT working
+ggplot(data = starwars) +
+  geom_point(x = height, y = mass, color = sex)
+```
+
+```{r eval = FALSE}
+# option f)
+# Working
+ggplot() +
+  geom_point(data = starwars, 
+             mapping = aes(x = height, y = mass, color = sex))
+```
+
+```{r eval = FALSE}
+# option g)
+# NOT working
+ggplot() +
+  geom_point(starwars, 
+             aes(x = height, y = mass, color = sex))
+```
+
+## Your turn: More Graphics
+
+Look at the ggplot2 cheatsheet to help you determine which functions to utilize.
+
+a)  Plot a histogram of `height`.
+
+```{r}
+# your code
+ggplot(data = starwars, mapping = aes(x = height)) +
+  geom_histogram(binwidth = 5)
+```
+
+<br>
+
+b)  Plot another histogram of `height`, but this time use a different bin width, for example `bindwidth = 50`
+
+```{r}
+# your code
+ggplot(data = starwars, mapping = aes(x = height)) +
+  geom_histogram(binwidth = 50)
+```
+
+<br>
+
+c)  Graph a density plot of `height`. How does this compare to the histograms?
+
+```{r}
+# your code
+ggplot(data = starwars, mapping = aes(x = height)) +
+  geom_density()
+```
+
+<br>
+
+d)  Get a barchart of the `sex` frequencies (for all individuals).
+
+```{r}
+# your code
+ggplot(data = starwars, mapping = aes(x = sex)) +
+  geom_bar()
+```
+
+<br>
+
+e)  The following command allows you to obtain a similar barchart, via `geom_col()` to the one in previous part d).
+
+```{r results='hide'}
+sex_count = count(starwars, sex)
+  
+ggplot(sex_count, aes(x = sex, y = n)) +
+  geom_col() +
+  labs(title = "Count of individuals by sex",
+       y = "count")
+```
+
+What if you want to arrange bars in decreasing/increasing order, instead of alphabetically? This is where the `reorder()` function comes handy.
+
+```{r}
+ggplot(sex_count, aes(x = reorder(sex, n), y = n)) +
+  geom_col() +
+  labs(title = "Count of individuals by sex",
+       x = "sex",
+       y = "count")
+```
+
+Try to make another barcahart but this time use `aes(x = reorder(sex, -n)` and see what happens.
+
+```{r}
+# your code
+ggplot(sex_count, aes(x = reorder(sex, -n), y = n)) +
+  geom_col() +
+  labs(title = "Count of individuals by sex",
+       x = "sex",
+       y = "count")
+```
+
+<br>
+
+f)  Make boxplots of `y = height` based on `x = sex`
+
+```{r}
+# your code
+ggplot(data = starwars, aes(x = height, y = sex)) +
+  geom_boxplot()
+```
+
+<br>
+
+g)  The command below lets you create a small data frame `fem` for the female individuals
+
+```{r}
+fem <- filter(starwars, sex == 'female')
+```
+
+Using `fem`, find out how to make a scatterplot of `x = height` and `y = mass`, using `geom_text()` to display the names of the individuals
+
+```{r}
+# your code
+ggplot(data = fem, aes(x = height, y = mass, label = name)) +
+  geom_point() +
+  geom_text()
+```
+
+------------------------------------------------------------------------
+
+# Facets
+
+Another interesting function in `"ggplot2"` are the faceting functions:
+
+-   `facet_grid()`
+
+-   `facet_wrap()`
+
+They allow you to divide graphics based on a categorical variable. Here's an example of facets---using `facet_grid()`---based on `sex`.
+
+```{r}
+# facets: column-by-column
+ggplot(data = starwars, aes(x = height, y = mass)) +
+  geom_point() +
+  facet_grid(. ~ sex)
+```
+
+\
+
+```{r}
+# facets: row-by-row
+ggplot(data = starwars, aes(x = height, y = mass)) +
+  geom_point() +
+  facet_grid(sex ~ .)
+```
+
+As you can tell `facet_grid()` produces facets using a grid structure. Notice the notation used inside this function to specify how facets are produced:
+
+```         
+# formula notation
+. ~ sex
+```
+
+The above notation is an example of so-called **formula** notation in R. To understand this notation, say you have two (categorical) variables `A` and `B`.
+
+-   the expression `A ~ B` is used to tell ggplot: cross categories of `A` (in the **rows**) with categories of `B` (in the **columns**)
+
+-   the expression `. ~ B` is used to tell ggplot: make facets **column-by-column** based on categories of `B`.
+
+-   the expression `A ~ .` is used to tell ggplot: make facets **row-by-row** based on categories of `A`.
+
+A sibling function of `facte_grid()` is `facet_wrap()` which will try its best to produce **rows-by-columns** facets, using as few facets as possible:
+
+```{r}
+# facets: wrapped into rows-and-columns
+ggplot(data = starwars, aes(x = height, y = mass)) +
+  geom_point() +
+  facet_wrap(. ~ sex)
+```
+
+## Your Turn
+
+Experiment with `facet_grid()` and `facet_wrap()` to make histograms of `height`, based on facets by `gender`.
+
+```{r}
+# your code
+ggplot(data = starwars, aes(x = height)) +
+  geom_histogram(binwidth = 5) +
+  facet_grid(gender ~ .)
+
+ggplot(data = starwars, aes(x = height)) +
+  geom_histogram(binwidth = 5) +
+  facet_grid(. ~ gender)
+
+ggplot(data = starwars, aes(x = height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(. ~ gender)
+```
+
+------------------------------------------------------------------------
+
+# Themes
+
+Another interesting feature of `ggplot` graphics is the use of **themes**.
+
+By default, ggplot graphics use a default background theme. But you can change it to one of the following:
+
+-   `theme_bw()`: back and white
+-   `theme_minimal()`: minimalist theme
+-   `theme_classic()`: classic
+-   `theme_light()`: light background
+-   `theme_dark()`: dark background
+
+## Your Turn
+
+Experiment with a couple of themes, and reproduce one of your previous plots changing their theme.
+
+```{r}
+# your code
+ggplot(data = starwars, aes(x = height)) +
+  geom_histogram(binwidth = 5) +
+  facet_wrap(. ~ gender) +
+  theme_dark()
+
+```

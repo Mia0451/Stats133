@@ -1,0 +1,427 @@
+---
+title: "HW2) Lists and Matrices"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+**Stat 133**
+
+> "Fiat Lux"
+
+Concepts in **_computing_** with data
+
+Some ~~stroke~~ text
+
+This is a [hyperlink](hyperlink)
+
+
+
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You can use
+    the template file `hw2-template.qmd` provided in bCourses.
+
+-   Name this file as `hw2-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `hw2-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+
+-   Also, if you submit the incorrect files you will receive no credit.
+
+:::
+
+
+-----
+
+
+# Creating a List
+
+Refer to the instructions file `hw2-problems.html`, specifically the refer to
+the list `index_fund`.
+
+Write code to create the list `index`, and display this object (i.e. print it). 
+Notice that `stats` is a named double vector, `stocks` is a list with 5 named 
+elements, `characteristics` is a factor, and `performance` is a $3 \times 3$ 
+matrix with row and column names.
+
+```{r}
+# function to compute letter grade "P" or "NP"
+letter_grade <- function(x = 100) {
+  if (!is.numeric(x)) {
+    x <- as.numeric(x)
+  }
+  grade <- rep("P", length(x))
+  grade[x < 70] <- "NP"
+  grade[is.na(x)] <- NA
+  return(grade)
+}
+
+tokelvin <- function(x) {
+  return(273.15 + (5/9) * (x - 32))
+}
+
+x = sample(1:10, size = 1)
+x
+
+count = 0
+for (i in c(2,4,6,8,10)) {
+  for (j in 1:20) {
+    for (k in 1:10) {
+      # call some function we have defined elsewhere
+      count = count + 1
+    }
+  }
+}
+count
+
+print("===========")
+
+# your code
+stats = c(122.1800, 0.1681, 0.1815, 0.0300)
+names(stats) = c("NAV", "YTD", "Stdev", "Expense")
+
+stocks = list(
+  "MSFT" = "Microsoft Corp",
+  "APPL" = "Apple Inc",
+  "NVDA" = "Nvidia Corp",
+  "AMZN" = "Amazon Com Inc",
+  "GOOG" = "Alphabet Inc"
+)
+
+characteristics_vec <- c("broad-based", "low-fee", "long-term")
+characteristics <- factor(characteristics_vec)
+
+performance = rbind(c(23.22, 7.92, 14.04), c(23.21, 7.95, 14.05), c(23.20, 9.90, 14.04))
+rownames(performance) = c("return", "price", "benchmark")
+colnames(performance) = c("1y", "3y", "5y")
+
+index_fund = list(
+  "description" = "Total U.S. Stock Market",
+  "stats" = stats,
+  "stocks" = stocks,
+  "characteristics" = characteristics,
+  "performance" = performance
+)
+
+index_fund
+```
+
+
+
+<br>
+
+-----
+
+
+# Harry Potter Characters
+
+Refer to the Harry Potter data set described in the instructions file 
+`hw2-problems.html`.
+
+
+## Creating Vectors
+
+Create vectors for the columns in the data table displayed above, 
+according to the following data types. If there are missing values, encode them 
+as `NA`. 
+
+- `name`: character vector (name of individual)
+
+- `born`: integer vector (years)
+
+- `height`: real (i.e. double) vector (cm)
+
+- `weight`: real (i.e. double) vector (lbs)
+
+- `wand`: integer vector (length of wand, in inches)
+
+
+```{r}
+# your code
+result <- 3
+
+for (j in seq(from = 1, to = 18, by = 2)) {
+  if (j %% 3 == 0) {
+    result <- result - j
+  } else {
+    result <- result + j
+  }
+}
+
+
+last = c("Stark", "Snow", "Lannister", "Targaryen", "Greyjoy")
+first = c("Arya", "Jon", "Tyrion", "Daenerys", "Yara")
+gpa = c(3,3,4,3,4)
+got = data.frame(last, first, gpa)
+got
+
+
+
+
+
+
+name <- c("Harry", "Ronald", "Hermione", "Albus", "Rubeus")
+born <- c(1980L, 1980L, 1979L, 1881L, 1928L)
+height <- c(165, 175, 165, 180, 350)
+weight <- c(130, 152, 118, 168, 289)
+wand <- c(11L, 12L, 10L, 15L, 16L)
+
+name
+```
+
+
+<br>
+
+-----
+
+
+# Matrix FIVE
+
+## Creating a Matrix
+
+Use the vectors created in the preceding part to create a matrix `FIVE`. 
+This matrix should have dimensions: 5 rows, and 4 columns (born, height, 
+weight, and wand). Also, give names to both the rows and columns of 
+`FIVE` according to figure 1; and display this matrix.
+
+```{r}
+# your code
+FIVE = matrix(c(born, height, weight, wand), nrow = 5, ncol = 4)
+rownames(FIVE) = name
+colnames(FIVE) = c("born", "height", "weight", "wand")
+FIVE
+```
+
+
+## Subscripting (aka Indexing, Slicing) a Matrix
+
+Refer to the matrix `FIVE`.
+
+a) Using `FIVE`, write a command that gives you the first 3 rows, and 
+columns `height` and `weight`.
+
+```{r}
+# your code
+FIVE[1:3, c("height", "weight")]
+```
+
+<br>
+
+b) Using `FIVE`, write a command that gives you the following output 
+(see below): age values arranged in decreasing order. _Hint_: `sort()` is
+your friend.
+
+```
+   Harry   Ronald Hermione   Rubeus    Albus 
+    1980     1980     1979     1928     1881
+```
+
+```{r}
+# your code
+sort(FIVE[,"born"], decreasing = TRUE)
+```
+
+<br>
+
+c) Using `FIVE`, write a command that gives you the name of the oldest 
+individual. _Hint_: `which.min()` is your friend.
+
+```{r}
+# your code
+name[which.min(FIVE[,"born"])]
+```
+
+<br>
+
+d) Using `FIVE`, write a command that gives you the number of individuals that
+have a wand length greater than or equal to 13. _Hint_: the function `sum()` is 
+your friend.
+
+```{r}
+# your code
+sum(FIVE[,"wand"] >= 13)
+```
+
+<br>
+
+e) Using `FIVE`, write a command that arranges its content by `weight`
+in decreasing order. _Hint_: the function `order()` is your friend.
+
+```{r}
+# your code
+FIVE[order(FIVE[,"weight"], decreasing = TRUE), ]
+```
+
+<br>
+
+f) Add a new row to `FIVE` with the data of Bellatrix given below. _Hint_: the
+`rbind()` function is your friend. Display the updated `FIVE` matrix. To 
+clarify: `FIVE` should have 6 rows (Bellatrix's data in row 6), and it should 
+also include Bellatrix's name in the row names. 
+
+- name: Bellatrix
+- born: 1951
+- height: 157
+- weight: NA
+- wand (length): 13
+
+```{r}
+# your code
+Bellatrix <- c(1951L, 157, NA, 13L)
+FIVE <- rbind(FIVE, Bellatrix)
+FIVE
+```
+
+<br>
+
+g) Add a column `ratio` to `FIVE`. The values of `ratio` should be the 
+ratio of height over weight (i.e. height divided by weight). _Hint_: the 
+`cbind()` function is your friend. Display the updated `FIVE` matrix. To 
+clarify: `FIVE` should have 6 rows and 5 columns. 
+
+```{r}
+# your code
+ratio <- FIVE[,"height"] / FIVE[,"weight"]
+FIVE <- cbind(FIVE, ratio)
+FIVE
+```
+
+
+<br>
+
+
+-----
+
+
+# List of Harry Potter Characters
+
+Create a list `five` containing the vectors created in problem 2.
+This list should have five elements (one vector per element). Make sure each 
+element of the list has the corresponding name so that you can refer to them
+by invoking either `five$name` or `five[["name"]]`. 
+Display your `five` list.
+
+```{r}
+# your code
+five <- list(
+  "name" = name,
+  "born" = born,
+  "height" = height,
+  "weight" = weight,
+  "wand" = wand
+)
+five
+```
+
+
+## Subscripting (aka Indexing, Slicing) a List
+
+__Refer to the list `FIVE`__. Write R commands---displaying the output---that 
+answer the following questions. Answer each part in its individual code chunk.
+
+
+a) What is the name of the individual with smallest wand length?
+_Hint_: the function `which.min()` is your friend.
+
+```{r}
+# your code
+five$name[which.min(five$wand)]
+```
+
+<br>
+
+b) How many individuals have an unknown `born` value? _Hint_: the function 
+`is.na()` is your friend.
+
+```{r}
+# your code
+sum(is.na(five$born))
+```
+
+<br>
+
+c) What is the median `born` year (ignore missing values)?
+
+```{r}
+# your code
+median(five$born, na.rm = TRUE)
+```
+
+<br>
+
+d) What is the height of the individual with the smallest weight value?
+_Hint_: the function `which.min()` is your friend.
+
+```{r}
+# your code
+five$height[which.min(five$weight)]
+```
+
+<br>
+
+e) How many individuals have height values between 180 and 360 meters (inclusive)?
+_Hint_: the function `sum()` is your friend.
+
+```{r}
+# your code
+sum(five$height >= 180 & five$height <= 360)
+```
+
+<br>
+
+f) Sort the names in `five` arranged---from smallest to largest---by their 
+weight/height ("weight over height") values. _Hint_: the function `order()` is 
+your friend.
+
+```{r}
+# your code
+five$name[order(five$weight / five$height, decreasing = FALSE)]
+```
+
+<br>
+
+
+-----
+
+
+## Rubric {.unnumbered .unlisted}
+
+- 😞 &nbsp; **None (0 pts)**: No submission; or terribly wrong; or incorrect files.
+
+- 😟 &nbsp; **Deficient (1 pt)**: Displays minimal effort. Fairly incomplete. Code
+    is badly written and/or has various major issues.
+
+- 🙁 &nbsp; **Needs improvement (2 pts)**: Displays some effort. Doesn't complete all
+    components. Code is poorly written and/or has various minor issues, possibly 
+    including a major issue or mistake.
+
+- 😐 &nbsp; **Fair (3 pts)**: Decent effort. Hits all the elements. Possibly
+    a couple of minor mistakes or some non-minor issue. Code written succinctly, 
+    but it could be better documented, and/or formatted.
+    
+- 🙂 &nbsp; **Good (4 pts)**: Solid effort. Hits all the elements. Possibly a 
+    minor mistake. Fairly easy to follow (both the code and the output).
+
+- 😀 &nbsp; **Excellent (5 pts)**: Finished all components of the assignment
+    correctly (without any issues, bugs, mistakes). Code written succinctly, 
+    well documented, and easy to follow (both the code and the output).
+

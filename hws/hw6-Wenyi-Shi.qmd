@@ -1,0 +1,517 @@
+---
+title: "HW6) S&P 500 Returns"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+```{r message = FALSE}
+# packages
+library(tidyverse)  # pkgs for data science
+library(lubridate)  # for working with dates
+library(plotly)     # for interactive graphics
+library(tidyquant)  # financial & quant functions
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You
+    can use the template file `hw6-template.qmd` provided in bCourses.
+
+-   Name this file as `hw6-first-last.qmd`, where `first` and `last` are
+    your first and last names (e.g. `hw6-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes
+    `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+
+-   Also, if you submit the incorrect files you will receive no credit.
+:::
+
+# Visualizing S&P 500 Returns {.unnumbered}
+
+In this HW you will explore and visualize daily fluctuations as well as
+different types of returns from the *Standard & Poor's 500* (S&P 500)
+market index.
+
+::: callout-important
+## Important Note
+
+We are assuming that you have done/reviewed all the work discussed in
+lab-7.
+
+Also, your graphs should be appropriate for sharing with outsiders. That
+means your graphs should have, at least:
+
+-   title
+-   labels on the axes
+-   nice theme
+
+This is just a starting point. Consider including a subtitle, adopting
+your own color palette, taking control of your legends (if any),
+including annotations (if applicable), etc.
+:::
+
+## S&P 500 Data (1928-2023) {.unnumbered}
+
+Like in lab-7, the data for this assignment has to do with the **S&P
+500** market index tracking the stock performance of 500 of the largest
+companies listed on stock exchanges in the United States. To be more
+precise, you will be working with S&P 500 data from 1928
+(`"1928-01-03"`) to 2023 (`"2023-12-29"`).
+
+Recall that the `"tidyquant"` function `tq_get()` allows you to get
+historical (daily) data based on a given ticker symbol: e.g. `"^GSPC"`
+(S&P500 index).
+
+------------------------------------------------------------------------
+
+# Timelines of the S&P 500 daily closing values
+
+If you visit the Wikipedia entry of the S&P 500
+(<https://en.wikipedia.org/wiki/S%26P_500>), you will see a classic
+graphic of a line chart depicting the daily closing values, specifically
+from January 3, 1950 to February 19, 2016 (see link below).
+
+<https://en.wikipedia.org/wiki/File:S_and_P_500_daily_linear_chart_1950_to_2016.png>
+
+You can also find a logarithmic chart of the same closing values from
+1950-01-03 to 02-19-2016 (see link below)
+
+<https://en.wikipedia.org/wiki/File:S%26P_500_daily_logarithmic_chart_1950_to_2016.png>
+
+<br>
+
+**Your Goal**: Use ggplot commands to obtain similar graphics to those
+in Wikipedia. To be more precise:
+
+a)  Create a timeline to visualize the closing values from the first
+    trading day in 1928 (1928-01-03) to the last trading day in December
+    2023 (2023-12-29).
+
+```{r}
+# your code
+sp500_data <- tq_get("^GSPC", from = "1928-01-03", to = "2023-12-29")
+ggplot(sp500_data, aes(x = date, y = close)) +
+  geom_line(color = "blue") +
+  labs(title = "S&P 500 Daily Closing Values (1928 - 2023)",
+       x = "Date",
+       y = "Daily Closing Value") +
+  theme_minimal()
+```
+
+<br>
+
+b)  Create a timeline **in logarithmic scale** (log base-10) to
+    visualize the closing values from the first trading day in 1928
+    (1928-01-03) to the last trading day in December 2023 (2023-12-29).
+
+```{r}
+# your code
+ggplot(sp500_data, aes(x = date, y = close)) +
+  geom_line(color = "blue") +
+  scale_y_log10() +  # Apply log10 scale to the y-axis
+  labs(title = "S&P 500 Daily Closing Values (1928 - 2023, Logarithmic Scale)",
+       x = "Date",
+       y = "Daily Closing Value") +
+  theme_minimal()
+
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Bar Chart of Annual Returns
+
+Another interesting graphic available in the same Wikipedia entry is a
+bar chart---over time---of the S&P 500 Annual Returns (link below)
+
+<https://en.wikipedia.org/wiki/File:S_%26_P_500_Annual_Returns.webp>
+
+A nicer (and interactive) version of the same graphic can be found in
+the following Macrotrends' webpage about *S&P 500 Historical Annual
+Returns* (link below)
+
+<https://www.macrotrends.net/2526/sp-500-historical-annual-returns>
+
+**Your Goal**: 1) Use dplyr commands to obtain a table containing the
+annual returns, and then 2) create a bar chart (similar to that in
+Wikipedia) to visualize those annual returns. We suggest using
+`ggplotly()` to get a nice interactive bar chart based on a `ggplot`
+object.
+
+::: callout-tip
+**Note**: To compute annual returns, use only closing values (i.e.
+column `close`).
+
+If you need help on how to approach this problem, please refer to lab-7,
+section 7.
+:::
+
+```{r}
+annual_returns <- sp500_data %>%
+  mutate(year = format(date, "%Y")) %>%
+  group_by(year) %>%
+  summarize(year_start = first(close), year_end = last(close)) %>%
+  mutate(annual_percent_return = (year_end - year_start) / year_start * 100) %>%
+  mutate(earn = annual_percent_return >= 0) %>% # Use to create two colors
+  ungroup()
+
+plot <- ggplot(annual_returns, aes(x = as.numeric(year), y = annual_percent_return, fill = earn)) +
+  geom_bar(stat = "identity") +
+  labs(title = "S&P 500 Annual Returns", x = "Year", y = "Annual Percent Return") +
+  theme_minimal() +
+  theme(legend.position="none")
+
+ggplotly(plot)
+```
+
+<br>
+
+**Write code to answer the following questions?**
+
+In the analyzed period (1928 - 2023) ...
+
+a)  What has been the average annual return of the S&P 500?
+
+```{r}
+# your code
+#
+#sp500_data_annnual_return = sp500_data |>
+#  group_by(year) |>
+#  summarise(
+#    first = first(open),
+#    last = last(close),
+#    return = (last - first) / first)
+
+#sp500_data_annnual_return 
+
+annual_returns <- sp500_data %>%
+  mutate(year = format(date, "%Y")) %>%
+  group_by(year) %>%
+  summarize(year_start = first(close), year_end = last(close)) %>%
+  mutate(annual_percent_return = (year_end - year_start) / year_start * 100)
+
+mean_return <- summarize(annual_returns, avg_annual_return = mean(annual_percent_return))
+mean_return 
+```
+
+<br>
+
+b)  What has been the standard deviation of annual returns in the S&P
+    500?
+
+```{r}
+# your code
+sd_return <- sd( pull(annual_returns, annual_percent_return) )
+sd_return
+```
+
+<br>
+
+c)  What has been the lowest annual return, and in which year? **Hint**:
+    the functions `min()` and `which.min()` are your friends.
+
+```{r}
+# your code
+min(annual_returns$annual_percent_return)
+annual_returns$year[which.min(annual_returns$annual_percent_return)]
+```
+
+<br>
+
+d)  What has been the highest annual return, and in which year?
+    **Hint**: the functions `max()` and `which.max()` are your friends.
+
+```{r}
+# your code
+max(annual_returns$annual_percent_return)
+annual_returns$year[which.max(annual_returns$annual_percent_return)]
+```
+
+<br>
+
+e)  How many years have had negative returns? How many years have had
+    positive returns (by "positive" we mean greater than or equal to 0)?
+
+```{r}
+# your code
+negative_years <- sum(annual_returns$annual_percent_return < 0)
+print(paste("How many years have had negative returns?", negative_years))
+
+positive_years <- sum(annual_returns$annual_percent_return >= 0)
+print(paste("How many years have had positive returns?", positive_years))
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Distribution of Annual Returns
+
+With the annual returns, we can also create a graphic to visualize their
+distribution (e.g. histogram). An example can be found in the first
+figure displayed in the following article by Joachim Klement: *The
+distribution of stock market returns* (link below)
+
+<https://klementoninvesting.substack.com/p/the-distribution-of-stock-market>
+
+**Your Goal**: Use ggplot commands to make a histogram of annual
+returns, and provide a concise description of the displayed
+distribution. Keep in mind that Joachim Klement's graphic is based on
+many more years of historical data; therefore do not try to replicate
+his histogram.
+
+```{r}
+
+mean_return <- mean(annual_returns$annual_percent_return)
+sd_return <- sd(annual_returns$annual_percent_return)
+
+ggplot(annual_returns, aes(x = annual_percent_return)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 5, fill = "lightblue", color = "blue", alpha = 0.7) +
+  stat_function(fun = dnorm, args = list(mean_return, sd_return), 
+                color = "darkblue", linewidth = 1) +
+  labs(title = "Annual Returns (1928-2023)",
+       x = "Annual Return (%)",
+       y = "Density") +
+  theme_minimal()
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Three-Year Returns
+
+In addition to considering annual returns, we can also consider returns
+for a certain number of years, for example **3-year returns**.
+
+Assume we have downloaded---via `tq_get()`---the S&P 500 historical
+daily data in a tibble `sp500`. Again, refer to lab-7 for a refresher on
+how to get this data.
+
+For computational efficiency, we only need columns `date` and `close`,
+and derive a new column `year`:
+
+``` r
+# S&P table with columns 'date', 'close', and 'year'
+sp500_dat = sp500 |>
+  select(date, close) |>
+  mutate(year = year(date))
+```
+
+As an example, say we want to compute the 3-year return from 2010 to
+2012. One way to do this is with the following dplyr pipeline:
+
+``` r
+# 3-year return (2010-2012)
+return_2010_2012 = sp500_dat |>
+  filter(year %in% 2010:2012) |>
+  summarise(return = (last(close) - first(close)) / first(close)) |>
+  pull(return)
+```
+
+What about the 3-year return from 2011 to 2013? No problem, just repeat
+the previous pipeline by changing the time period to `2011:2013`
+
+``` r
+# 3-year return (2011-2013)
+return_2011_2013 = sp500_dat |>
+  filter(year %in% 2011:2013) |>
+  summarise(return = (last(close) - first(close)) / first(close)) |>
+  pull(return)
+```
+
+We can continue this process to obtain 3-year returns for 2012-2014,
+2013-2015, ..., 2017-2019 and 2018-2020, for example.
+
+``` r
+# 3-year return (2018-2020)
+return_2018_2020 = sp500_dat |>
+  filter(year %in% 2018:2020) |>
+  summarise(return = (last(close) - first(close)) / first(close)) |>
+  pull(return)
+```
+
+For illustration purposes, the set of 3-year returns from 2010 to 2020
+is displayed below:
+
+```         
+       years     return
+1  2010-2012  0.2587842
+2  2011-2013  0.4532617
+3  2012-2014  0.6122185
+4  2013-2015  0.3976422
+5  2014-2016  0.2220822
+6  2015-2017  0.2990041
+7  2016-2018  0.2455408
+8  2017-2019  0.4309226
+9  2018-2020  0.3932992
+```
+
+<br>
+
+**Your Goal**: Write a `for` loop to obtain 3-year returns for the time
+period 1928 to 2023. In other words, the first 3-year return is for
+1928-1930. The second 3-year returns is for 1929-1931, and on and on
+till the last 3-year return for 2021-2023.
+
+Store these returns in a table (e.g. data.frame or tibble)
+`sp500_3year_returns` containing two columns: `years` and `return`.
+
+Use your `sp500_3year_returns` to make a bar chart similar to the one in
+problem 2 to visualize the 3-year returns over time.
+
+```{r}
+sp500_dat <- sp500_data %>%
+  select(date, close) %>%
+  mutate(year = year(date))
+
+year_start <- 1928
+year_end <- 2023
+
+year_stop <- year_end - 2
+
+sp500_3year_returns <- tibble(years = character(), return = numeric())
+
+for (i in year_start:year_stop) {
+  years_seq <- i:(i + 2)
+  years_str <- paste(years_seq[1], years_seq[3], sep = "-")  
+  return_value <- sp500_dat %>%
+    filter(year %in% years_seq) %>%
+    summarise(return = (last(close) - first(close)) / first(close)) %>%
+    pull(return)
+  sp500_3year_returns <- sp500_3year_returns %>%
+    add_row(years = years_str, return = return_value)
+}
+
+
+print(sp500_3year_returns)
+
+
+
+stats = summarize(
+  sp500_3year_returns,
+    mean = mean(sp500_3year_returns$return, na.rm = TRUE),
+    sd = sd(sp500_3year_returns$return, na.rm = TRUE),
+  median = median(sp500_3year_returns$return, na.rm = TRUE)
+  )
+
+
+quants <- quantile(sp500_3year_returns$return, probs = c(0.1, 0.25, 0.75, 0.9))
+iqr =  IQR(sp500_3year_returns$return, na.rm = FALSE)
+
+ a = matrix(stats)
+ for (i in 1:4) {
+   a <- rbind(a, quants[i])
+ }
+ 
+ a <- rbind(a, iqr[1])
+ 
+ a <- cbind(c("mean", "sddev", "median", "10th", "25th", "75th", "90th", "iqr"), a)
+ colnames(b) = c("statistic", "value")
+ 
+ggplot(sp500_3year_returns, aes(x = as.numeric(substr(years, 1, 4)), y = return)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "3-Year Returns of S&P 500 (1928-2023)",
+       x = "Year",
+       y = "Return (%)") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = seq(1928, 2023, by = 10))
+```
+
+<br>
+
+::: {.callout-tip icon="false"}
+**Suggestion for approaching this loop**
+
+Example with 3-year returns from 2010 to 2015.
+
+We are interested in the following series of 3-year sequences:
+
+-   2010, 2011, 2012
+-   2011, 2012, 2013
+-   2012, 2013, 2014
+-   2013, 2014, 2015
+
+Year Inputs:
+
+-   $\textcolor{blue}{\text{year}_{start} := 2010}$
+-   $\textcolor{blue}{\text{year}_{end} := 2015}$
+
+We also need to know the initial year of the "last" or "stop" sequence
+(e.g. 2013):
+
+-   $\textcolor{blue}{\text{year}_{stop} := \text{year}_{end} - 2} \quad$
+    (to stop the loop)
+
+Loop iterates through a sequence of years,
+$\textcolor{blue}{\text{seq\_years}}$, from
+$\textcolor{blue}{\text{year}_{start}}$ to
+$\textcolor{blue}{\text{year}_{stop}}$
+
+At each iteration $\textcolor{blue}{i}$, a set of three consecutive
+years is evaluated from $\textcolor{blue}{\text{seq\_years}_{i}}$ to
+$\textcolor{blue}{\text{seq\_years}_{i}+2}$
+:::
+
+------------------------------------------------------------------------
+
+## Rubric {.unnumbered .unlisted}
+
+-   😞   **None (0 pts)**: No submission; or terribly wrong; or
+    incorrect files.
+
+-   😟   **Deficient (1 pt)**: Displays minimal effort. Fairly
+    incomplete. Code is poorly written and not documented.
+
+-   🙁   **Needs improvement (2 pts)**: Displays some effort. Doesn't
+    complete all components. Code is poorly written and not documented.
+    Just contains code and output but no descriptions, explanations or
+    interpretations. Or vice versa, just contains output and
+    descriptions but no code. Possibly a major issue or critical
+    mistake. Does not take care of well presented content (e.g. improper
+    use of markdown elements, messy content, hard to follow).
+
+-   😐   **Satisfactory (3 pts)**: Decent effort. Hits all the elements.
+    Possibly a couple of minor mistakes or some non-minor issue. Fairly
+    easy to follow (both the code and the output). Most plots are
+    produced with default settings (minimal or no customization). Overly
+    simplistic explanations and interpretations. Nothing spectacular,
+    either bad or good.
+
+-   🙂   **Good (4 pts)**: Solid effort. Hits all the elements. Possibly
+    a minor mistake. Easy to follow (both the code and the output). Most
+    plots are customized (labels, colors, theme, etc). Takes care of
+    well presented information (e.g. proper use of markdown elements, no
+    spelling issues, well organized).
+
+-   😀   **Excellent (5 pts)**: Code written succinctly, comprehensibly,
+    and properly formatted. Easy to follow (both the code and the
+    output). Content is extremely well organized. Graphs properly
+    labeled/annotated. Uses non-default settings, highly customizing the
+    graphics to give them an outstanding appearance (i.e. publication
+    quality). Descriptions are clear and easy to follow, either because
+    graphs are labeled clearly or you've written additional text to
+    describe how you interpret the output. Spectacular submission, that
+    can be used as an *exemplary solution*.

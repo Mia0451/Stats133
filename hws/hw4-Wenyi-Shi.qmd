@@ -1,0 +1,395 @@
+---
+title: "HW4) Graphics with ggplot2"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You
+    can use the template file `hw4-template.qmd` provided in bCourses.
+
+-   Name this file as `hw4-first-last.qmd`, where `first` and `last` are
+    your first and last names (e.g. `hw4-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes
+    `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+
+-   Also, if you submit the incorrect files you will receive no credit.
+:::
+
+# NBA Data (2022 Season) {.unnumbered}
+
+This HW involves visualizing some variables of NBA players (from the
+2022 regular season) by using functions from the tidyverse package
+`"ggplot2"`.
+
+## Importing the Data {.unnumbered}
+
+The data file `"nba2022-clean.csv"` is located in bCourses, in the same
+assignment folder with this HTML file of instructions.
+
+The code below allows you to import the data in R. As you can tell,
+`read_csv()` imports the file `"nba2022-clean.csv"`. In turn, the
+`col_types` argument is used to specify data-types for each of the
+columns:
+
+```{r}
+dat = read_csv(
+  file = "nba2022-clean.csv", 
+  col_types = cols(
+    player = col_character(),      # name of player
+    team = col_character(),        # team (3-letter abbreviation)
+    position = col_character(),    # abbreviated
+    height = col_double(),         # height in inches
+    weight = col_double(),         # weight in pounds
+    age = col_double(),            # age in years
+    experience = col_double(),     # years playing professionally
+    salary = col_double(),         # salary in dollars
+    games = col_double(),          # number of played games
+    points3 = col_double(),        # number of triple-pointers
+    points2 = col_double(),        # number of two-pointers
+    points1 = col_double(),        # number of free-throws
+    total_rebounds = col_double(), # defensive & offensive rebounds
+    assists = col_double(),        # number of assists
+    blocks = col_double(),         # number of blocks
+    turnovers = col_double()       # number of turnovers
+  ))
+```
+
+------------------------------------------------------------------------
+
+# Very Specific Prompts: Age of NBA players
+
+::: callout-important
+-   All the graphics must include a meaningful title.
+
+-   Including a subtitle would be nice but it's not mandatory.
+
+-   Make sure axes are labeled.
+:::
+
+## Histogram of Age
+
+Use *ggplot* functions to generate a histogram of `age`. Choose an
+adequate number of bins or a bin-width value. Also, provide a concise
+description of the displayed distribution.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = age)) +
+  geom_histogram(binwidth = 0.5) +
+  scale_x_continuous(limits = c(15, 45)) +
+  scale_y_continuous(limits = c(0, 75)) +
+  labs(title = "Age distribution for NBA Players in 2022",
+       x = "Ages",
+       y = "# of players") +
+  theme_minimal()
+```
+
+## Density plots of Age by Position
+
+Use *ggplot* functions to generate density plots of `age`, **faceting**
+by `position`. Fill the densities (i.e. fill the area under the curve)
+with a color of your choice. Use a theme that is not the default one.
+And provide a description of the displayed densities.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = age, color = position)) +
+  geom_density(aes(fill = position)) + 
+  scale_x_continuous(limits = c(10, 45)) +
+  facet_wrap(~ position) +
+  labs(title = "Age distribution for each position for NBA Players in 2022",
+       x = "Ages",
+       y = "Density") +
+  theme_minimal()
+```
+
+## Weight and Age of LAC players
+
+Consider the code given below. It allows you to graph a scatter plot of
+`height` and `turnovers` of Boston Celtics players. It also displays the
+last name of each player right next to the associated x-y point.
+
+``` r
+# Boston Celtics
+lakers = filter(dat, team == "BOS")
+
+# scatter plot of height and turnovers
+ggplot(data = lakers, aes(x = height, y = turnovers)) +
+  geom_point() +
+  geom_text(aes(label = str_extract(player, "\\w+$")), hjust = -0.1) 
+```
+
+Use the provided sample code to produce a scatter plot of `age` and
+`weight` for Los Angeles Clippers (LAC) players. Use `position` to
+color-code the players (both the points and their last names). In
+addition, use `scale_x_continuous()` to adjust the x-axis scale so that
+its limits range from 20 to 36. Do the same for the y-axis---via
+`scale_y_continuous()`---so that its limits range from 160 to 260.
+Lastly, use a theme that is not the default one, and don't forget to
+include a title.
+
+```{r}
+# your code
+lakers = filter(dat, team == "LAC")
+
+# scatter plot of height and turnovers
+ggplot(data = lakers, aes(x = age, y = weight)) +
+  geom_point(aes(color = position), size = 1) +
+  geom_text(aes(label = str_extract(player, "\\w+$"), color = position), hjust = -0.1) +
+  scale_x_continuous(limits = c(20, 36)) +
+  scale_y_continuous(limits = c(160, 260)) +
+  labs(title = "Weight / Age distribution for NBA LAC players in 2022",
+       x = "Age",
+       y = "Weight") +
+  theme_minimal()
+```
+
+## Boxplots of Age, by Experience
+
+Refer to the data set `dat`. Without using facets, write *ggplot*
+commands to generate boxplots of `age`, by years of `experience`. For
+graphing purposes, use `factor(experience)` so that ggplot treats
+`experience` as a discrete variable instead of a continuous one.
+Likewise, include a title, possibly a subtitle, nice axis labels, and
+use a theme that is not the default one. Also, provide a description of
+the displayed distributions, potential outliers, interesting patterns,
+etc.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = age, y = factor(experience))) +
+  geom_boxplot() + 
+  labs(title = "The number of player years for each age category",
+       x = "Age",
+       y = "Experience") +
+  theme_minimal() +
+  annotate(geom = "text", x = 25, y = 17, label = "The older the players, the more years in NBA", color = "purple")
+```
+
+<br>
+
+Based on the obtained graphic, answer the following:
+
+a)  Are there players younger than 20-years old?
+`yes`
+
+b)  For those 30-year-old players, what is the minimum (smallest) years
+    of experience?
+`1 year`
+
+c)  For those 30-year-old players, what is the maximum (largest) years
+    of experience?
+    `11 years`
+
+d)  What `experience` value has the smallest interquartile range (IQR)
+    of age?
+    `16 years`
+
+e)  What `experience` values seem to have the largest top
+    25th-percentile of age?
+`15 years`
+<br>
+
+------------------------------------------------------------------------
+
+# Somewhat open-ended questions
+
+Answer the following questions. Generate appropriate graphics to support
+your conclusions. To be clear: answer each question with a graphic, and
+a brief description of what's going on in the plot.
+
+::: callout-important
+-   You are **not** allowed to use `"dplyr"` commands or do any
+    manipulation on the data.
+
+-   All the graphics must include a meaningful title.
+
+-   Make sure axes are labeled.
+:::
+
+## Age and Team
+
+Generate a single graphic that lets you visualize the age of players, by
+team, in order to answer the following parts:
+
+a)  Which team has the oldest player? **MIA (Miami)**
+
+b)  How many teams have players younger than 20-years old? **7**
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = age, y = team)) +
+  geom_boxplot() + 
+  scale_x_continuous(limits = c(18, 45)) +
+  labs(title = "The player age range for each NBA team in 2022",
+       x = "Age",
+       y = "Team") +
+  theme_minimal() 
+```
+
+## Turnovers and Blocks
+
+In basketball:
+
+-   a **turnover** occurs when a team loses possession of the ball to
+    the opposing team before a player takes a shot at their team's
+    basket.
+
+-   a **block** or *blocked shot* occurs when a defensive player legally
+    deflects a field goal attempt from an offensive player to prevent a
+    score. The defender is not allowed to make contact with the
+    offensive player's hand (unless the defender is also in contact with
+    the ball) or a foul is called.
+
+**What is the relationship between `turnovers` and `blocks`?** Generate
+a graphic that lets you see how `turnovers` is associated to `blocks`,
+and address the given question. Give a description of what's going on in
+the plot, and provide a plausible explanation for the observed
+pattern(s) in the graphic.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = turnovers, y = blocks)) +
+  geom_point() +
+  labs(title = "Turnovers and Blocks for each NBA player in 2022",
+       x = "Turnovers",
+       y = "Blocks") +
+  theme_minimal() +
+  annotate(geom = "text", x = 175, y = 125, label = "No strong connection between blocks and turnovers", color = "purple")
+```
+
+## Height and Blocks
+
+**Do taller players tend to obtain more blocks?** Generate a graphic
+that lets you see if taller players are able to achieve more blocks.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = factor(height), y = blocks)) +
+  geom_boxplot() + 
+  labs(title = "Height and Blocks for NBA players in 2022",
+       x = "Height",
+       y = "Blocks") +
+  theme_minimal() +
+  annotate(geom = "text", x = 6, y = 100, label = "Higher players achieve more blocks", color = "purple")
+```
+
+------------------------------------------------------------------------
+
+# Very open-ended
+
+::: callout-important
+-   All the graphics must include a meaningful title.
+
+-   Make sure axes are labeled.
+:::
+
+## Shooting Guards
+
+According to Wikipedia:
+
+> "The shooting guard (SG)---also known as the two or the off
+> guard---is, along with the small forward, often referred to as a wing
+> because of its use in common positioning tactics. As the name
+> suggests, most shooting guards are prolific from three-point range and
+> long mid-range... In the NBA, a shooting guard is generally between 6
+> feet 2 inches (1.88 m) to 6 feet 7 inches (2 m)."
+
+<https://en.wikipedia.org/wiki/Basketball_positions>
+
+Make at least 2 graphics that allow you to either confirm or reject
+Wikipedia's claim about Shooting Guards.
+
+```{r}
+# your code
+ggplot(data = dat, aes(x = height, color = position)) +
+  geom_density(aes(fill = position), alpha = 0.5) +
+  labs(title = "Height distribution for each position for NBA Players in 2022",
+       x = "Height",
+       y = "Density") +
+  theme_minimal()
+
+ggplot(data = dat, aes(x = points1, color = position)) +
+  geom_density(aes(fill = position), alpha = 0.5) +
+  labs(title = "1 point distribution for NBA players in 2022 per position",
+       x = "total of 1 point",
+       y = "Density") +
+  theme_minimal()
+
+ggplot(data = dat, aes(x = points2, color = position)) +
+  geom_density(aes(fill = position), alpha = 0.5) +
+  labs(title = "2 points distribution for NBA players in 2022 per position",
+       x = "total of 2 points",
+       y = "Density") +
+  theme_minimal()
+
+ggplot(data = dat, aes(x = points3, color = position)) +
+  geom_density(aes(fill = position), alpha = 0.5) +
+  labs(title = "3 points distribution for NBA players in 2022 per position",
+       x = "total of 3 points",
+       y = "Density") +
+  theme_minimal()
+```
+
+------------------------------------------------------------------------
+
+# Rubric {.unnumbered .unlisted}
+
+-   😞   **None (0 pts)**: No submission; or terribly wrong; or
+    incorrect files.
+
+-   😟   **Deficient (1 pt)**: Displays minimal effort. Fairly
+    incomplete. Code is poorly written and not documented.
+
+-   🙁   **Needs improvement (2 pts)**: Displays some effort. Doesn't
+    complete all components. Code is poorly written and not documented.
+    Just contains code and output but no descriptions, explanations or
+    interpretations. Uses the same type of plot for each graph, or
+    doesn't use plots appropriate for the variables being analyzed.
+    Possibly a major issue or mistake.
+
+-   😐   **Fair (3 pts)**: Decent effort. Hits all the elements.
+    Possibly a couple of minor mistakes or some non-minor issue. Code is
+    okay, but there is room for better comments, and/or format. Fairly
+    basic plots produced with default settings (i.e. minimal or no
+    customization). Nothing spectacular, either bad or good.
+
+-   🙂   **Good (4 pts)**: Solid effort. Hits all the elements. Possibly
+    a minor mistake. Easy to follow (both the code and the output). Most
+    plots are customized (labels, colors, theme, etc). Takes care of
+    well presented information (e.g. proper use of markdown elements, no
+    spelling issues, well organized).
+
+-   😀   **Excellent (5 pts)**: Finished all components of the
+    assignment correctly. Code is well-documented (both self-documented
+    and with additional comments as necessary). Graphs properly
+    labeled/annotated. Uses non-default settings, highly customizing the
+    graphics to give them an outstanding appearance (i.e. publication
+    quality). Descriptions are clear and easy to follow, either because
+    graphs are labeled clearly or you've written additional text to
+    describe how you interpret the output. Spectacular submission, that
+    can be used as an *exemplary solution*.

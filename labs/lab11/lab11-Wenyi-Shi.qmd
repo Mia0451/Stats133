@@ -1,0 +1,553 @@
+---
+title: "Lab-11: Maps (part 1)"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  revealjs:
+    smaller: true
+    scrollable: true
+    transition: fade
+    background-transition: fade
+    auto-stretch: false
+    embed-resources: true
+    title-slide-attributes:
+      data-background-image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Tabula_Rogeriana_1929_copy_by_Konrad_Miller.jpg/600px-Tabula_Rogeriana_1929_copy_by_Konrad_Miller.jpg"
+      data-background-opacity: "0.5"
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+## General Instructions {transition="slide-out" background-image="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Seal_of_University_of_California%2C_Berkeley.svg/300px-Seal_of_University_of_California%2C_Berkeley.svg.png" background-opacity="0.2" background-size="contain"}
+
+```{r message=FALSE}
+# packages
+library(tidyverse)      # ecosystem of data science packages
+library(sf)             # provides classes and functions for vector data
+library(rnaturalearth)  # provides data sets of maps (vector data)
+library(leaflet)        # for drawing web interactive maps
+```
+
+::: incremental
+-   Use the template file `lab11-template.qmd` to answer the questions.
+
+-   Rename this file as `lab11-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab11-gaston-sanchez.qmd`).
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive
+    no credit.
+:::
+
+## Storms Data {transition="slide-in none-out"}
+
+. . .
+
+Consider the `storms` data from the package `"dplyr"`. This data set
+includes the positions and attributes of storms in the North Atlantic
+from 1975.
+
+```{r}
+# variables (columns) in storms
+names(storms)
+```
+
+. . .
+
+Storms from 1979 onward are measured every six hours during the lifetime
+of the storm. Storms in earlier years have some missing data.
+
+```{r}
+storms |>
+  slice_head(n = 5) |>
+  select(1:7)
+```
+
+. . .
+
+As you can tell, `storms` contains latitude (`lat`) and longitude
+(`long`) coordinates indicating the location of every storm record.
+
+# Plotting trajectory of storms {transition="none-in convex-out"}
+
+Since we have `lat` and `long` data, we can try to visualize the
+positions of the storms. To make things more concrete, let's subset
+storms from 1975, and go over a series of scatterplots to visualize the
+storms' trajectories.
+
+## Plotting storms (round 1) {.unnumbered transition="convex-in concave-out"}
+
+```{r}
+# plotting storms (round 1)
+storms75 = storms |> filter(year == 1975)
+
+# "plain vanilla scaterrplot"
+ggplot(data = storms75, aes(x = long, y = lat, group = name)) +
+  geom_point() +
+  labs(title = "North Atlantic Storms (1975)")
+```
+
+## Plotting storms (round 2) {.unnumbered transition="concave-in zoom-out"}
+
+```{r}
+# plotting storms (round 2)
+# "color coding storms based on name, and connecting dots with line"
+ggplot(data = storms75, aes(x = long, y = lat, group = name, color = name)) +
+  geom_point(size = 1) +
+  geom_path() + 
+  labs(title = "North Atlantic Storms (1975)")
+```
+
+## Plotting storms (round 3) {.unnumbered transition="zoom-in none-out"}
+
+```{r}
+# plotting storms (round 3)
+# "adding arrow heads indicating direction of trajectory"
+ggplot(data = storms75, aes(x = long, y = lat, group = name, color = name)) +
+  geom_point(size = 1) +
+  geom_path(arrow = arrow(length = unit(0.1, "inches"))) + 
+  labs(title = "North Atlantic Storms (1975)")
+```
+
+# Mapping Storms {transition="none-in"}
+
+The previous plots are okay as a starting point but it would be better
+if we could actually graph a map to better see the positions and
+trajectory of storms in 1975.
+
+## Map of World {transition="concave-out"}
+
+Our first mapping approach will involve `"ggplot2"` and some layers from
+the *simple features* package `"sf"`.
+
+. . .
+
+-   **Step 1)** Use `ne_countries(returnclass = "sf")` to get data of
+    world-map with country polygons. This data is an `"sf"`, *simple
+    features*, object (i.e. map data)
+
+. . .
+
+-   **Step 2)** Assuming that you have an `"sf"` (simple features)
+    object (i.e. map data), you pass this to `ggplot()` and use the
+    `geom_sf()` layer.
+
+. . .
+
+```{r}
+world_countries = ne_countries(returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = world_countries)
+```
+
+## Map of North Atlantic (round 1) {transition="concave-in slide-out"}
+
+We can take the map of the world and zoom-in with `coord_sf()` to obtain
+a map of the North Atlantic:
+
+```{r}
+# North Atlantic map (round 1)
+ggplot() +
+  geom_sf(data = world_countries) +
+    coord_sf(xlim = c(-110, 0), ylim = c(5, 65))
+```
+
+## Map of North Atlantic (round 2) {transition="slide-in zoom-out"}
+
+We can change the background color of the country polygons, as well as
+the color of the ocean.
+
+```{r}
+# North Atlantic map (round 2)
+ggplot() +
+  geom_sf(data = world_countries, fill = "beige") +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  theme(panel.background = element_rect(fill = "lightblue1"))
+```
+
+## Map of North Atlantic (round 3) {transition="zoom-in none-out"}
+
+One more example:
+
+```{r}
+# North Atlantic map (round 3)
+ggplot() +
+  geom_sf(data = world_countries, fill = "#465680", color = "gray50") +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  theme(panel.background = element_rect(fill = "#0B1B55"),
+        panel.grid.major = element_blank())
+```
+
+# Plotting 1975 Storms {transition="none-in convex-out"}
+
+Continue the exploration of storms in 1975, here are two examples of
+maps to plot the trajectories of those tropical cyclones.
+
+## Example: Light Map {transition="convex-in none-out"}
+
+```{r}
+# Light map
+ggplot() +
+  geom_sf(data = world_countries) +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  geom_point(data = storms75, 
+          aes(x = long, y = lat, group = name, color = name),
+          size = 0.5, alpha = 0.5) +
+  geom_path(data = storms75, 
+          aes(x = long, y = lat, group = name, color = name),
+          arrow = arrow(length = unit(0.1, "inches"))) + 
+  theme(panel.background = element_blank(),
+        axis.ticks = element_blank(), # hide tick marks
+        axis.text = element_blank()) + # hide degree values of lat & lon
+  labs(title = "North Atlantic Storms (1975)",
+       x = "", 
+       y = "")
+```
+
+## Example: Dark Map {transition="none-in zoom-out"}
+
+```{r}
+# Dark map
+ggplot() +
+  geom_sf(data = world_countries, fill = "#465680", color = "gray50") +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  geom_point(data = storms75,
+             aes(x = long, y = lat, group = name, color = name),
+             size = 0.5, alpha = 0.5) +
+  geom_path(data = storms75,
+            aes(x = long, y = lat, group = name, color = name),
+            linewidth = 1.5, alpha = 0.7,
+            arrow = arrow(length = unit(0.08, "inches"))) + 
+  theme(panel.background = element_rect(fill = "#0B1B55"),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), # hide tick marks
+        axis.text = element_blank()) + # hide degree values of lat & lon
+  labs(title = "North Atlantic Storms (1975)",
+       x = "", 
+       y = "")
+```
+
+## Your Turn: Storms from 2000 to 2009 {transition="zoom-in concave-out" background-color="#bd5c59"}
+
+-   Create a map of storms from 2000 to 2009, faceting by `year`.
+
+-   If you are coloring the storms based on their names, then hide the
+    legend: `theme(legend.position = "none")`
+
+```{r}
+# your code
+storms_2000_2009 = storms |> filter(year >= 2000 & year <= 2009)
+ggplot() +
+  geom_sf(data = world_countries) +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  geom_point(data = storms_2000_2009,
+             aes(x = long, y = lat, group = name, color = name),
+             size = 0.5, alpha = 0.5) +
+  geom_path(data = storms_2000_2009,
+            aes(x = long, y = lat, group = name, color = name),
+            arrow = arrow(length = unit(0.08, "inches"))) + 
+  theme(panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), # hide tick marks
+        axis.text = element_blank(),
+        legend.position = "none") + # hide degree values of lat & lon
+  labs(title = "North Atlantic Storms (2000 - 2009)",
+       x = "", 
+       y = "") + facet_wrap(~ year)
+```
+
+## Your Turn: Storms in September 2020 {transition="concave-in" background-color="#f2d95a"}
+
+-   Graph a map to visualize the trajectory of storms that were active
+    in `year` 2020 during the `month` of September.
+
+-   Use `wind` as the `size` argument for `geom_point()`
+
+-   Include a title and subtitle in your graphic.
+
+```{r}
+# your code
+storms_Septmber_2020 = storms |> filter(year == 2020 & month == 09)
+ggplot() +
+  geom_sf(data = world_countries) +
+  coord_sf(xlim = c(-110, 0), ylim = c(5, 65)) +
+  geom_point(data = storms_Septmber_2020,
+             aes(x = long, y = lat, group = name, color = name, size = wind),
+             alpha = 0.5) +
+  geom_path(data = storms_Septmber_2020,
+            aes(x = long, y = lat, group = name, color = name),
+            arrow = arrow(length = unit(0.08, "inches"))) + 
+  theme(panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), # hide tick marks
+        axis.text = element_blank(),
+        legend.position = "none") + # hide degree values of lat & lon
+  labs(title = "North Atlantic Storms (Sep 2020)",
+       subtitle = "Storm direction and point size indicating the wind",
+       x = "", 
+       y = "")
+```
+
+## Your Turn: Hurricanes Sally and Beta (Sep-2020) {transition="zoom-out" background-color="#30425e"}
+
+-   Graph a map to visualize the trajectories of hurricane `"Sally"` and
+    tropical storm `"Beta"` from September 2020.
+
+-   Instead of using the `world_countries` map data, use the following
+    data for a map of the USA with its States:
+
+``` r
+map_usa = ne_states(country = "united states of america", returnclass = "sf")
+```
+
+-   Use `coord_sf(xlim = c(-110, -75), ylim = c(20, 50))` to set the
+    coordinate limits of your map.
+
+-   Based on your map, `"Sally"` made landfall on which State?
+-   `Florida`
+
+-   Based on your map, `"Beta"` made landfall on which State?
+-   `Texas`
+
+```{r}
+# your code
+storms_Septmber_2020_sally_beta = storms |> filter(year == 2020 & month == 09 & (name == 'Sally' | name == 'Beta'))
+map_usa = ne_states(country = "united states of america", returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = map_usa) +
+  coord_sf(xlim = c(-110, -75), ylim = c(20, 50)) +
+  geom_point(data = storms_Septmber_2020_sally_beta,
+             aes(x = long, y = lat, group = name, color = name, size = wind),
+             alpha = 0.5) +
+  geom_path(data = storms_Septmber_2020_sally_beta,
+            aes(x = long, y = lat, group = name, color = name),
+            arrow = arrow(length = unit(0.08, "inches"))) + 
+  theme(panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), # hide tick marks
+        axis.text = element_blank())
+  labs(title = "North Atlantic Storms (Sep 2020)",
+       subtitle = "Storm direction and point size indicating the wind",
+       x = "", 
+       y = "")
+```
+
+# Web Interactive Maps with Leaflet {transition="zoom"}
+
+[Leaflet](https://leafletjs.com/) is a JavaScript library used to build
+interactive maps for websites and web mapping applications.
+
+The R package `"leaflet"` lets you create and customize *Leaflet* maps
+in R.
+
+These maps can be used directly from the R console, from RStudio, in
+Markdown documents (e.g. `qmd`, `Rmd`), and in Shiny applications.
+
+## Example: Basic Leaflet {transition="zoom"}
+
+You create a Leaflet map with these basic steps:
+
+::: incremental
+1)  Create a map widget by calling `leaflet()`.
+
+2)  Add layers (i.e. features) to the map by using layer functions (e.g.
+    `addTiles`, `addMarkers`, `addPolygons`) to modify the map widget.
+
+3)  Repeat step 2 as desired.
+
+4)  Print the map widget to display it.
+:::
+
+. . .
+
+```{r}
+# view of UC Berkeley 
+# with marker at Campanile's lat & long
+leaflet() |>
+  addTiles() |> # default OpenStreetMap map tiles
+  addMarkers(lng = -122.2579, lat = 37.8721, popup = "Berkeley")
+```
+
+## Your Turn: Campus Leaflet {transition="zoom" background-color="#305228"}
+
+-   Graph a leaflet map with 2 markers indicating your favorite places
+    on Campus.
+
+-   You will have to pass a 2-element vector for the `lng` coordinates,
+    and also a 2-element vector for the `lat` coordinates.
+
+-   Likewise, you will have to pass a 2-element vector for the `popup`
+    names.
+
+-   To obtain the latitude and longitude coordinates, you can search a
+    location on Google Maps. The coordinates are displayed in the URL of
+    your browser.
+
+```{r}
+# your code
+leaflet() |>
+  addTiles() |> # default OpenStreetMap map tiles
+  addMarkers(lng = c(-122.2626814, -122.2582626), lat = c(37.8710231, 37.8754453), popup = c("Dwinelle Hall", "Foothill Dinning"))
+```
+
+## Map Tiles {transition="zoom-in slide-out"}
+
+Leaflet uses map tiles from:
+
+-   OpenStreetMap (OSM): <https://www.openstreetmap.org/>
+
+    -   OSM is simply the database with all the data in xml-vector
+        format.
+
+-   CartoDB: <https://carto.com/basemaps/>
+
+## Adding Data Objects {transition="slide"}
+
+Both `leaflet()` and the map layer functions have an optional `data`
+parameter that is designed to receive spatial data in one of several
+forms, for instance:
+
+-   From base R:
+    -   lng/lat matrix
+    -   data frame with lng/lat columns
+-   From the `"sf"` package:
+    -   the data frame of class `"sf"`
+
+## Example: adding `"sf"` data polygons {transition="slide"}
+
+```{r}
+usa_states = ne_states(
+  country = "United States of America", 
+  returnclass = "sf")
+
+leaflet(data = usa_states) |> 
+  addTiles() |>
+  setView(lng = -90, lat = 40, zoom = 3) |>
+  addPolygons(fillColor = rainbow(10), stroke = FALSE)
+```
+
+## Mapping 1975 North Atlantic Storms {transition="slide-in convex-out"}
+
+```{r}
+storms |>
+  filter(year == 1975) |>
+leaflet() |>
+  setView(lng = -50, lat = 30, zoom = 3) |>
+  addTiles() |>
+  addProviderTiles(provider = "NASAGIBS.ViirsEarthAtNight2012") |>
+  addCircleMarkers(
+    lng = ~long, 
+    lat = ~lat,
+    radius = 1, 
+    color = "#DDFF03")
+```
+
+We can try to differentiate each of the storms. How? One idea is to
+color each storm, and also to display a label with name and date.
+
+```{r}
+# filter on year, and select some of the columns
+storms75 = storms |> 
+  filter(year == 1975) |>
+  select(name:wind)
+
+# auxiliary table with names of storms
+storm75_names = storms75 |> distinct(name)
+
+# how many storms
+num_storms75 = storm75_names |> nrow()
+
+# generate color for each storm
+storm75_names$color = rainbow(n = num_storms75)
+storm75_names
+
+# merge colors
+storms75 = inner_join(storms75, storm75_names, by = "name")
+
+# add column "label" to be displayed in map
+storms75 = storms75 |>
+  mutate(label = paste0(name, "; ", month, "-", day)) 
+```
+
+With the modified `storms75`, we can make the following leaflet map:
+
+```{r}
+storms75 |>
+  leaflet() |>
+  setView(lng = -50, lat = 30, zoom = 3) |>
+  addTiles() |>
+  addCircleMarkers(
+    lng = ~long, 
+    lat = ~lat,
+    radius = ~wind/20, 
+    label = ~label,
+    color = ~color)
+```
+
+## Your Turn: Storms in September 2020 {transition="convex" background-color="#b67bbd"}
+
+-   Graph a leaflet map to visualize the trajectory of storms that were
+    active in `year` 2020 during the `month` of September.
+
+```{r}
+# your code
+storms2020 = storms |> filter(year == 2020 & month == 09) |>
+  select(name:wind)
+
+# auxiliary table with names of storms
+storm2020_names = storms2020 |> distinct(name)
+
+# how many storms
+num_storms2020 = storm2020_names |> nrow()
+
+# generate color for each storm
+storm2020_names$color = rainbow(n = num_storms2020)
+storm2020_names
+
+# merge colors
+storms2020 = inner_join(storms2020, storm2020_names, by = "name")
+
+# add column "label" to be displayed in map
+storms2020 = storms2020 |>
+  mutate(label = paste0(name, "; ", month, "-", day))
+
+storms2020 |>
+  leaflet() |>
+  setView(lng = -50, lat = 30, zoom = 3) |>
+  addTiles() |>
+  addCircleMarkers(
+    lng = ~long, 
+    lat = ~lat,
+    radius = ~wind/20, 
+    label = ~label,
+    color = ~color)
+```
+
+# Your Turn: Slides Background Image {transition="slide-out" background-image="https://petapixel.com/assets/uploads/2022/07/pillars-of-creation-featured.jpg" background-opacity="0.2" background-size="contain"}
+
+Add a fun background image on this slide and a cool transition!
+
+<!-- Hint: transition, background-transition, background-image and background-opacity may be useful -->
+
+## Your Turn: Slides Color and Bullets 
+
+Color the background of this slide and add a bulleted list of cool facts
+that appear one at a time :)
+
+::: incremental
+1)  I am first bullet.
+
+2)  I am second bullet.
+
+3)  You got it, I am the third bullet.
+
+4)  Getting bored with me, wooo! I am the last one :<
+:::
+
+<!-- Hint: transition, background-transition, background-color, and :::incremental or . . . may be useful (in visual mode, insert "slide pause" or "div" with incremental as the class) -->

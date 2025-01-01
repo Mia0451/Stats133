@@ -1,0 +1,390 @@
+---
+title: "Lab-4: Functions and Conditionals"
+subtitle: "Stat 133"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab04-template.qmd` to answer the questions.
+
+-   Rename this file as `lab04-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab04-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes
+    `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive
+    no credit.
+:::
+
+------------------------------------------------------------------------
+
+# Function `stats`
+
+Consider the following function `stats`.
+
+```{r}
+stats = function(x = 1:10){
+  return(c(min(x), mean(x), max(x), sd(x)))
+}
+```
+
+a)  How many arguments does `stats` have?
+
+**Your answer: 1**
+
+b)  What kind of input object(s) `stats` is supposed to take
+    (presumably)?
+
+**Your answer: numeric**
+
+c)  What kind of output does `stats` return?
+
+**Your answer: numeric**
+
+d)  What does `stats` return if you remove the `return()` statement (see
+    code below)?
+
+```{r}
+stats = function(x = 1:10){
+  c(min(x), mean(x), max(x), sd(x))
+}
+```
+
+**Your answer: same as before, return the value of the last evaluated
+statement**
+
+e)  Does `stats` work for all types of vectors (e.g. logical, numeric,
+    character)?
+
+**Your answer: only numeric, logical work, character does not work on
+min(), mean(), max() function**
+
+f)  Does `stats` work if `x` is a list with numbers: e.g.
+    `stats(x = list(2,4,6,8))`?
+
+**Your answer: No**
+
+g)  What happens if you invoke `stats` as follows:
+    `stats(x = 1:5, y = 6:10)`? Explain.
+
+**Your answer: Error because the function only need one argument**
+
+------------------------------------------------------------------------
+
+# Default Values
+
+Consider the following lines of code:
+
+```{r}
+# variable x
+x = 5
+
+# function foo
+foo = function(x = 3){
+  x
+}
+
+# using foo
+foo() + foo(1)
+
+foo(1:5)
+foo(foo())
+```
+
+Indicate whether each of the following parts is TRUE or FALSE:
+
+a)  Invoking `foo()`, without specifying any argument, will always
+    return 3.
+
+**Your Answer: TRUE**
+
+b)  Invoking `foo(1:5)` returns `3`.
+
+**Your Answer: False**
+
+c)  The value `x = 5` is used in the computation of `foo() + foo(1)`.
+
+**Your Answer: False**
+
+d)  Invoking `foo(foo())` causes an error.
+
+**Your Answer: False**
+
+e)  Changing the value of variable `x = 5` to `x = 0` affects the
+    behavior of function `foo()`.
+
+**Your Answer: False**
+
+<br>
+
+------------------------------------------------------------------------
+
+# Conditionals
+
+## Greater Than
+
+Let $y$, and $x_1$ be two numbers. Suppose we are interested in
+determining whether $y$ is greater than or equal to $x_1$ as follows:
+
+$$
+\text{if} \quad y \geq x_1 \quad \text{TRUE} \quad \text{else} \quad \text{FALSE}
+$$
+
+In R, we could write code like this:
+
+```{r}
+# sample code
+y = 5
+x1 = 2
+
+if (y >= x1) {
+  TRUE
+} else {
+  FALSE
+}
+```
+
+## Less Than
+
+Let $y$, and $x_2$ be two numbers. Suppose we are interested in
+determining whether $y$ is less than or equal to $x_2$ as follows:
+
+$$
+\text{if} \quad y \leq x_2 \quad \text{TRUE} \quad \text{else} \quad \text{FALSE}
+$$
+
+In R, we could write code like this:
+
+```{r}
+# sample code
+y = 5
+x2 = 3
+
+if (y <= x2) {
+  TRUE
+} else {
+  FALSE
+}
+```
+
+## Your Turn: Between
+
+Let $a$, $b_1$, and $b_2$ be three numbers. Suppose we are interested in
+determining whether $a$ is between $b_1$ and $b_2$ as follows:
+
+$$
+\text{if} \quad b_1 \leq a \leq b_2 \quad \text{TRUE} \quad \text{else} \quad \text{FALSE}
+$$
+
+a)  Using `a = 5`, `b1 = -2`, and `b2 = 4`, write R code to implement an
+    `if-else` statement for the above compound condition.
+
+```{r}
+# your code
+a = 5
+b1 = -2
+b2 = 4
+
+if(b1 <= a & a <= b2) {
+  TRUE
+} else {
+  FALSE
+}
+```
+
+<br>
+
+b)  Use your code in part (a) to write a function named `between` that
+    takes three numbers: `a`, `b1`, and `b2`. This function compares `a`
+    and returns `TRUE` if a number `a` is between `b1` and `b2`, `FALSE`
+    otherwise.
+
+```{r}
+# your between function
+a = 5
+b1 = -2
+b2 = 4
+
+between = function(a, b1, b2){
+  if(b1 <= a & a <= b2) {
+    TRUE
+  } else {
+    FALSE
+  }
+}
+```
+
+Test your `between()` function with the following cases:
+
+i)  `a = 5`, `b1 = 0`, and `b2 = 3`
+
+```{r}
+# your test
+#a = 5
+#b1 = 0
+#b2 = 3
+between(5, 0, 3)
+
+```
+
+ii) `a = 4`, `b1 = 0`, and `b2 = 5`
+
+```{r}
+# your test
+between(4, 0, 5)
+```
+
+iii) `a = 3`, `b1 = 3`, and `b2 = 3`
+
+```{r}
+# your test
+between(3,3,3)
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# More Conditionals
+
+Say you have a number `input`, and you want to compute another number
+`output` that takes a value depending on `input` as follows:
+
+$$
+\texttt{output} = \begin{cases}
+0 & \text{if} & \texttt{input} < 0 \\
+& \\
+\texttt{input} & \text{if} & \texttt{input} \in [0, 133] \\
+& \\
+133 & \text{if} & \texttt{input} > 133
+\end{cases}
+$$
+
+## Your Turn: `compress()` function
+
+Write a function `compress()` that "compresses" an input number into the
+interval $[0, 133]$, so that a number less than 0 is replaced by 0 and a
+number greater than 133 is replaced by 133
+
+```{r}
+# your compress() function
+x = 1
+compress = function(x) {
+  if (x < 0) {
+    0
+  } else if (x >= 0 & x <= 133) {
+    x
+  } else{
+    133
+  }
+}
+```
+
+Test `compress()` with:
+
+```{r}
+compress(-133)
+compress(133)
+compress(1.33)
+compress(0)
+compress(13.3)
+compress(-0.133)
+```
+
+------------------------------------------------------------------------
+
+# Future Value
+
+Consider the following equation for Future Value:
+
+$$
+\text{FV} = \text{p} \times \left(1 + \frac{r}{k} \right)^{nk}
+$$
+
+where:
+
+-   $\text{FV}$ = future value (amount accumulated)
+
+-   $\text{p}$ = principal
+
+-   $r$ = annual interest rate (i.e. annual rate of return)
+
+-   $n$ = number of years
+
+-   $k$ = number of compounding periods per year
+
+Typical compounding periods are yearly ($k = 1$), twice yearly
+($k = 2$), quarterly ($k = 4$) and monthly ($k = 12$).
+
+## Your Turn: Future Value Function
+
+-   Write a function `future_value()` that allows you to compute the
+    future value.
+
+-   Also, give default values to the arguments:
+
+    -   $p$ = 1
+    -   $r$ = 0.01
+    -   $n$ = 1
+    -   $k$ = 1
+
+-   If `n` is negative, then the function should `stop()` execution with
+    an error message `"n cannot be negative"`.
+
+-   If `k` less than or equal to zero, then the function should `stop()`
+    execution an error message `"k must be positive"`.
+
+-   Include comments for the function's documentation (e.g. title,
+    description, inputs, and output).
+
+```{r}
+# title: future value function
+# description: computes future value using compounding interest
+# inputs:
+# - p: amount for present value
+# - r: annual interest rate (i.e. annual rate of return)
+# - n: number of years
+# - k: number of compounding periods per year
+# output:
+# - computed future value
+future_value = function(p = 1, r = 0.01, n = 1, k = 1){
+  #first check arguments n
+  if(n < 0) {
+    stop(print("n cannot be negative"))
+  }
+  #second check arguments k
+  if(k <= 0) {
+    stop(print("k must be positive"))
+  }
+  FV = p * ( 1 + r / k) ** (n * k)
+  
+  return (FV)
+}
+```
+
+Test `future_value()` with:
+
+```{r}
+future_value(1000, 0.05, 10, 1)
+future_value(r = 0.05, n = 10, p = 1000, k = 1)
+future_value(1000, 0.05, -10, 1)
+future_value(1000, 0.05, 10, 0)
+```

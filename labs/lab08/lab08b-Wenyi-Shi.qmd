@@ -1,0 +1,154 @@
+---
+title: "Lab-08b: Intro to Regular Expressions"
+subtitle: "Stat 133"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)  # ecosystem of data science packages 
+library(rvest)      # for web scraping
+library(plotly)     # for web-interactive plots
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab08b-template.qmd` to answer the questions.
+
+-   Rename this file as `lab08b-first-last.qmd`, where `first` and `last` are your first and last names (e.g. `lab08b-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`.
+
+-   Submit both your qmd and HTML files to the corresponding assignment submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive no credit.
+:::
+
+::: callout-important
+We are assuming that you've reviewed the practice material associated to lab-08: `practice-regex2.html`.
+
+File in course website:
+
+<https://stat133.berkeley.edu/fall-2024/practice/practice-regex2.html>
+:::
+
+------------------------------------------------------------------------
+
+# Data: Men's 1500-meters Freestyle
+
+You will be working with data for one of the world records in swimming, namely the *Men's long course 1500-meters freestyle world record progression*, available in wikipedia:
+
+<https://en.wikipedia.org/wiki/World_record_progression_1500_metres_freestyle>
+
+The data is part of an HTML table from the above wikipedia page.
+
+## Data Scraping
+
+One way to scrape the data is with some `"rvest"` functions:
+
+tbl
+
+```{r}
+# wikipedia's url
+# (assemble url so that code fits within screen)
+wiki = "https://en.wikipedia.org/wiki/"
+swim1500 = "World_record_progression_1500_metres_freestyle"
+url = paste0(wiki, swim1500)
+
+# scrape HTML tables (into a list)
+tables = read_html(url) |>
+  html_table()
+  
+# desired table is the first one
+tbl = tables[[1]]
+tbl
+```
+
+------------------------------------------------------------------------
+
+# Data Cleaning and Timeline
+
+The goal is to clean the scraped data table in order to produce a simpler and cleaner table via string manipulations with regex. More specifically, the *clean* tibble will have the following columns:
+
+-   `time` (in minutes, as numeric)
+-   `name` (name of athlete)
+-   `month` (name of month)
+-   `day` (number of day, as numeric)
+-   `year` (number of year, as numeric)
+-   `date` (date yyyy-mm-dd, as Date)
+
+In addition, you will have to create a timeline graphic to visualize the progression of world records.
+
+## Tip 1) Time Conversion to Minutes
+
+As you can tell, the `Time` values are originally expressed as a mix of minutes and seconds. For example, the first record set by Henry Taylor back in Jul-25-1908 was **22:48.4** that is: 22 minutes, and 48.4 seconds.
+
+To clean the data and obtain a column `time`, we need to convert those times into minutes:
+
+$$
+22 + 48.4/60 = `r 22 + 48.4/60`
+$$
+
+## Tip 2) Conversion to Date type
+
+The values in column `Date` are given in non-standard format. Again, the date of the first record in the table is expressed as `"Jul 25, 1908"`.
+
+To convert this string as an actual `"Date"` type, we can use `as.Date()`
+
+```{r}
+date1 = as.Date("Jul 25, 1908", "%B %d, %Y")
+date1
+```
+
+In case you are curious, the specified date format has an interesting structure: `"%B %d, %Y"`. What do these symbols mean?
+
+-   `%B` is a placeholder to indicate the *capitalized* name of the month
+
+-   `%d` is a placeholder for the day of the month
+
+-   `%Y` is a placeholder to indicate a four-digit year value
+
+In turn, the output returned by `as.Date()` has a standard Date format: `"yyyy-mm-dd"`
+
+------------------------------------------------------------------------
+
+# Your Solutions
+
+```{r}
+# your code (feel free to use multiple code chunks)
+time_column <- pull(tbl, "Time")
+name_column <- pull(tbl, "Name")
+date_column <- pull(tbl, "Date")
+
+formatted_time_column <- str_split(time_column, ":")
+minute_time_column <- rep(0, length(formatted_time_column))
+for (i in 1:length(formatted_time_column)) {
+  minute_time_column[i] = as.numeric(formatted_time_column[[i]][1]) + as.numeric(formatted_time_column[[i]][2]) / 60
+}
+formatted_date_column <- as.Date(date_column, "%B %d, %Y")
+
+formatted_data = tibble(time = minute_time_column, 
+                        name = name_column, 
+                        month = month(formatted_date_column),
+                        day = day(formatted_date_column),
+                        year = year(formatted_date_column),
+                        date = formatted_date_column
+                      )
+
+
+plot <- ggplot(data = formatted_data, aes(x = date, y = time)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "World record for Men’s 1500-meters Freestyle",
+       x = "date",
+       y = "time (minutes)") +
+  theme_minimal()
+
+ggplotly(plot)
+```

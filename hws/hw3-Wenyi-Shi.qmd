@@ -1,0 +1,661 @@
+---
+title: "HW3) Functions"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You can use
+    the template file `hw3-template.qmd` provided in bCourses.
+
+-   Name this file as `hw3-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `hw3-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+
+-   Also, if you submit the incorrect files you will receive no credit.
+
+:::
+
+
+-----
+
+
+# Ordinary Annuity Formulas
+
+In HW1 you learned about the formula for computing the Future Value of an
+Ordinary Annuity (FVOA). It turns out that there is also the formula to compute 
+the Present Value of an Ordinary Annuity (PVOA). Here they are:
+
+\begin{equation}
+\label{eqn:fvoa}
+\text{FV ordinary annuity} \quad \longrightarrow \quad \text{FVOA} = \text{PMT} \times \frac{ \Big(1 + \frac{r}{k} \Big)^{nk} - 1}{r/k} \\
+\end{equation}
+
+\begin{equation}
+\label{eqn:pvoa}
+\text{PV ordinary annuity} \quad \longrightarrow \quad \text{PVOA} = \text{PMT} \times \frac{1 - \Big(1 + \frac{r}{k} \Big)^{-nk}}{r/k} \\
+\end{equation}
+
+
+where:
+
+- $\text{PMT}$ = periodic contribution made at the end of each period
+
+- $r$ = annual interest rate (i.e. annual rate of return) 
+
+- $n$ = number of years
+
+- $k$ = number of compounding periods per year (typically 12: monthly)
+
+The contribution periods of an annuity are usually yearly ($k = 1$), twice 
+yearly ($k = 2$), quarterly ($k = 4$) and monthly ($k = 12$). 
+
+
+<br>
+
+
+## Function `annuity()`
+
+Write a function `annuity()` that allows you to compute either the future
+value of an ordinary annuity, or the present value of an ordinary annuity.
+
+Your `annuity()` function should take the following arguments:
+
+- `payment` = periodic payment (or periodic contribution); default value `100`
+
+- `rate` = annual interest rate; default value `0.01`
+
+- `years` = number of years; default value `1`
+
+- `periods` = number of compounding periods per year; default value `1`
+
+- `type` = the type of annuity, `"future"` (default) or `"present"`
+
+In addition:
+
+- Your function should `stop()` execution if the value of `type` is different 
+from `"future"` or `"present"`. The error message should be something like: 
+`"invalid type argument, it should be 'future' or 'present'"`. 
+
+- Likewise, don't forget to include documentation comments (title, description, 
+inputs, and output).
+
+```{r}
+# your code
+# title: future value / present value function
+# description: computes future value / present value using compounding interest
+# inputs:
+# - payment: periodic payment (or periodic contribution); default value `100`
+# - rate: annual interest rate; default value `0.01`
+# - years: number of years; default value `1`
+# - periods: number of compounding periods per year; default value `1`
+# - type: the type of annuity, `"future"` (default) or `"present"`
+# output:
+# - computed future value / present value
+annuity = function(payment = 100, rate = 0.01, years = 1, periods = 1, type = "future") {
+  if (type != "future" & type != "present") {
+    stop("invalid type argument, it should be 'future' or 'present'")
+  }
+  
+  if (type == "future") {
+    FV = payment * ((1+rate/periods) ^ (years * periods) - 1) / (rate / periods)
+    return(FV)
+  } else {
+    PV = payment * (1 - (1 + rate / periods) ^ (-years * periods)) / (rate / periods)
+    return(PV)
+  }
+}
+```
+
+
+Here's how you should be able to invoke your `annuity()` function:
+
+```r
+# future value of annuity
+annuity(
+  payment = 500, 
+  rate = 0.05, 
+  years = 5,
+  periods = 12, 
+  type = "future")
+
+
+# present value of annuity
+annuity(
+  payment = 500, 
+  rate = 0.05, 
+  years = 5,
+  periods = 12, 
+  type = "present")
+```
+
+
+## Use `annuity()` to answer the following questions
+
+a) Mrs. X deposits an amount of \$6000 at the end of each year for the next ten 
+years for her daughter's education. How much money will Mrs. X have at the end 
+of ten years if the annual rate of return is 6%?
+
+```{r}
+# your code
+annuity(
+  payment = 6000, 
+  rate = 0.06, 
+  years = 10,
+  periods = 1, 
+  type = "future")
+```
+
+<br>
+
+b) Mr. Y deposits an amount of \$500 at the end of each month for the next ten 
+years for his son's education. How much money will Mr. Y have at the end 
+of ten years if the annual rate of return is 6%?
+
+```{r}
+# your code
+annuity(
+  payment = 500, 
+  rate = 0.06, 
+  years = 10,
+  periods = 12, 
+  type = "future")
+```
+
+<br>
+
+c) Assume a person has the opportunity to receive an ordinary annuity that pays 
+\$12,000 per year for the next 25 years, with a 7% interest rate. Use your 
+`annuity()` function to get the present value of this annuity.
+
+```{r}
+# your code
+annuity(
+  payment = 12000, 
+  rate = 0.07, 
+  years = 25,
+  periods = 1, 
+  type = "present")
+```
+
+
+<br>
+
+-----
+
+
+# Debugging
+
+The formula of the geometric mean of a set of numbers $x_1, x_2, x_3, \dots, x_n$, 
+is defined as:
+
+$$
+\left( \prod_{i=1}^{n} x_i \right)^{1/n} = (x_1 \cdot x_2 \cdot x_3 \cdot \ \dots \ \cdot x_n)^{1/n}
+$$
+
+Assume that the values for $x_1, x_2, x_3, \dots, x_n$ are given by the 
+following vector `x`:
+
+```{r}
+# vector of numbers
+x <- 1:10
+```
+
+Applying the above formula, the geometric mean of `x` is `4.528729`.
+
+
+## Explain what's wrong
+
+One of your friends wrote a function to calculate the geometric mean (see code 
+below). Help your friend find all the errors, and explain what's wrong.
+
+```
+# function that computes geometric mean
+# input: a numeric vector
+# output: geometric mean
+geo-mean <- funtion(x) {
+  if (!is.numeric(X) {
+    stop(input is not numeric)
+  }
+  # compute product: x1 * x2 * ... * xn
+  xproduct <- prod(x)
+  # exponentiation
+  geomean <- xproduct^1/n
+  return(goemean)
+}
+```
+
+__Your answer__: 
+
+1) function name `geo-mean` is invalid, should use underscore, i.e. `geo_mean`
+
+2) there is a typo in `funtion`, should be `function`
+
+3) the input is lower case `x`, but the buggy code used upper case letter `X` in checking whether it is numeric vector
+
+4) there is a missing right paranthesis in numeric checking
+
+5) in `stop` function, the input should be character, i.e. quote needed
+
+6) in calculating `geomean`, should use parenthesis to wrap `1/n`, also should use `length()` function since `n` doesn't exist, i.e. `(1/length(x))`
+
+7) the last return statement, typo in `goemean`, should be `geomean`
+
+
+<br>
+
+
+## Fix bugs
+
+Re-write the provided code to fix the issues and generate the desired output of
+`geo_mean()`.
+
+In addition, include an argument `na.rm` to decide whether missing values 
+should be removed in order to compute the geometric mean. By default 
+`na.rm = FALSE`; but if the user specifies `na.rm = TRUE`, then any missing 
+values should be removed before computing the output. _Hint_: the function
+`is.na(x)` allows you to test which elements in `x` are missing values.
+
+```{r}
+# title: function that computes geometric mean
+# description: computes geometric mean
+# inputs:
+# - x: a numeric vector
+# - na.rm: whether to remove NA element
+# output: 
+# - geometric mean
+geo_mean = function(x, na.rm = FALSE) {
+  if (!is.numeric(x)) {
+    stop("input is not numeric")
+  }
+  if (na.rm == TRUE) {
+    x = x[!is.na(x)]
+  }
+  # compute product: x1 * x2 * ... * xn
+  xproduct <- prod(x)
+  # exponentiation
+  geomean <- xproduct^(1/length(x))
+  return(geomean)
+}
+```
+
+
+## Apply `geo_mean()`
+
+Test your function with the following cases:
+
+a) `geo_mean(1:10)`
+
+```{r}
+# your code
+geo_mean(1:10)
+```
+
+<br>
+
+b) `geo_mean(c(1:9, NA))`
+
+```{r}
+# your code
+geo_mean(c(1:9, NA))
+```
+
+<br>
+
+c) `geo_mean(c(1:9, NA), na.rm = TRUE)`
+
+```{r}
+# your code
+geo_mean(c(1:9, NA), na.rm = TRUE)
+```
+
+<br>
+
+d) `geo_mean(c('1', '2', '3'))`
+
+```{r}
+# your code
+geo_mean(c('1', '2', '3'))
+```
+
+
+<br>
+
+
+-----
+
+
+# Function `eval_poly()`
+
+Write a function `eval_poly()` which will evaluate, for a given $y$, 
+polynomials of the form:
+
+$$
+P(y) = b_1 + b_2 y + b_3 y^2 + \dots + b_{n-1} y^{n-2} + b_n y^{n-1}    
+$$
+
+- Your function should take the following arguments (inputs):
+
+    + a numeric value `y`
+
+    + a vector of coefficients `coeffs`
+
+- Likewise, `eval_poly()` should return the value of the evaluated polynomial.
+
+_Hint_: Take advantage of vectorized code (no need to write loops, which we
+haven't covered yet).
+
+- If `y` is not numeric, then `eval_poly()` should `stop()` execution with a
+meaningful error message.
+
+- If `y` has length greater than 1, then only the first element `y[1]` will
+be used in the computation of the polynomial. In addition, a `warning()` 
+message should be displayed with a meaningful warning text.
+
+- Include comments for the function documentation (e.g. title, description, 
+inputs, and returned output). 
+
+```{r}
+# your code
+# title: function that evaluate polynomial value given the inputs
+# description: computes polynomial value
+# inputs:
+# - y: a numeric vector
+# - coeffs: coefficients
+# output: 
+# - a numeric vector with only one element
+eval_poly = function(y, coeffs) {
+  if (!is.numeric(y)) {
+    stop("y should be numeric")
+  }
+  if (length(y) != 1) {
+    warning("y should have only one element")
+  }
+  power = 0:(length(coeffs)-1)
+  powery = y[1] ^ power
+  return(sum(powery * coeffs))
+}
+```
+
+
+## Example {-}
+
+As an example, consider the following 2nd-degree polynomial:
+
+$$
+P(y) = 2 + 4 y + 6 y^2
+$$
+
+In this case, we have coefficients $b_1 = 2$, $b_2 = 4$, $b_3 = 6$.
+
+Evaluating this polynomial when $y = 3$ gives:
+
+$$
+P(3) = 2 + 4 (3) + 6 (3)^2 = 68
+$$
+
+Consequently, the way `eval_poly()` should be invoked is:
+
+```r
+eval_poly(y = 3, coeffs = c(2, 4, 6))
+```
+
+
+<br>
+
+
+## Apply `eval_poly()`
+
+a) Test `eval_poly()` to evaluate the following polynomial with $y = 2$
+
+$$
+P(y) = 1 + 2y + 3y^2 + 4y^3 + 5y^4
+$$
+
+```{r}
+# your code
+eval_poly(2, 1:5)
+```
+
+<br>
+
+b) Test `eval_poly()` to evaluate the following polynomial with $y = 0$
+
+$$
+P(y) = 1 + 2y + 3y^2 + 4y^3 + \dots + 99y^{98} + 100y^{99}
+$$
+
+```{r}
+# your code
+eval_poly(0, 1:100)
+```
+
+<br>
+
+c) Test `eval_poly()` to evaluate the following polynomial with $y = 1$
+
+$$
+P(y) = 2 + 2y + 2y^2 + 2y^3 + \dots + 2y^{18} + 2y^{19} + 2y^{20}
+$$
+
+```{r}
+# your code
+eval_poly(1, rep(2, 21))
+```
+
+<br>
+
+d) Test `eval_poly()` with `y = 1:3` and `coeffs = 3:1`
+
+```{r}
+# your code
+eval_poly(1:3, 3:1)
+```
+
+<br>
+
+e) Test `eval_poly()` with `y = "ucb"` and `coeffs = 1:3`
+
+```{r}
+# your code
+eval_poly("ucb", 1:3)
+```
+
+
+<br>
+
+
+-----
+
+
+# Lp-norm of a vector
+
+As you may know, the (Euclidean) length of an $n$-element vector 
+$\mathbf{x} = (x_1, x_2, \dots, x_n)$ is given by the __Euclidean norm__:
+
+$$
+\| x \|_2 = \big( x_1^2 + x_2^2 + \dots + x_n^2 \big)^{1/2}
+$$
+
+It turns out that the Euclidean norm of a vector $\mathbf{x}$ is a special case 
+of the so-called $p$-norm, _aka_ $L_p$-norm, defined by:
+
+$$
+\| \mathbf{x} \|_p = \big( |x_1|^p + |x_2|^p + \dots + |x_n|^p \big)^{1/p} 
+$$
+
+where $p$ is a real number such that $p \geq 1$.
+
+Another special case of the $p$-norm is the so-called __maximum norm__, often 
+denoted as $L^{\infty}$-norm, and given by:
+
+$$
+\| \mathbf{x} \|_{\infty} = \max \{ |x_1|, |x_2|, \dots, |x_n| \}
+$$
+
+
+## Function `Lpnorm()`
+
+Write a function `Lpnorm()` that allows you to compute the $L_p$-norm of a 
+numeric vector `x`
+
+- Your `Lpnorm()` function should take two arguments:
+    + `x` = numeric vector
+    + `p` = either a numeric value, or a character string `"max"`
+
+- Give `p` a default value of 1.
+
+- The function should return the value of the evaluated norm of `x` at `p`. 
+
+- If `x` is not numeric, then the function should `stop()` execution with a 
+meaningful error message.
+
+- If `p` is numeric but less than 1, then the function should `stop()` 
+execution with a meaningful error message.
+
+- Also, if `p` is not numeric and different from `"max"`, then the function 
+should `stop()` execution with a meaningful error message.
+
+- Include comments for the function's documentation (e.g. title, description, 
+inputs, and output).
+
+::: {.callout-warning}
+No need to use a loop (which we haven't covered yet). Instead, take 
+advantage of vectorization.
+:::
+
+```{r}
+# your code
+# title: Calculate Lp-norm of a vector
+# description: calculate Lp-norm of a vector or maximum norm of the vector
+# inputs:
+# - x: a numeric vector
+# - p: either numeric no less than 1 or character "max"
+# output: 
+# - a Lp-norm of the vector
+Lpnorm = function(x, p = 1) {
+  if (!is.numeric(x)) {
+    stop("x should be numeric")
+  }
+  if (is.numeric(p) & p < 1) {
+    stop("if p is numeric, then p should be no less than 1")
+  }
+  if (!is.numeric(p) & p != "max") {
+    stop("p should either be 'max' or numeric no less than 1")
+  }
+  if (p == "max") {
+    absx = abs(x)
+    return(x[which.max(absx)])
+  } else {
+    absx = abs(x)
+    powerp = absx^p
+    total = sum(powerp)
+    return(total^(1/p))
+  }
+}
+```
+
+
+## Apply `Lpnorm()`
+
+a) Test `Lpnorm()` with `x = 1:3` and `p = 1`
+
+```{r}
+# your code
+Lpnorm(1:3, 1)
+```
+
+<br>
+
+
+b) Test `Lpnorm()` with `x = 1:5` and `p = 2`
+
+```{r}
+# your code
+Lpnorm(1:5, 2)
+```
+
+<br>
+
+
+c) Test `Lpnorm()` with `x = 1:10` and `p = "max"`
+
+```{r}
+# your code
+Lpnorm(1:10, "max")
+```
+
+<br>
+
+d) Test `Lpnorm()` with `x = letters[1:4]` and `p = 2`
+
+```{r}
+# your code
+Lpnorm(letters[1:4], 2)
+```
+
+<br>
+
+e) Test `Lpnorm()` with `x = 1:3` and `p = 0.5`
+
+```{r}
+# your code
+Lpnorm(1:3, 0.5)
+```
+
+
+<br>
+
+
+-----
+
+
+## Rubric {.unnumbered .unlisted}
+
+- 😞 &nbsp; **None (0 pts)**: No submission; or terribly wrong; or incorrect files.
+
+- 😟 &nbsp; **Deficient (1 pt)**: Displays minimal effort. Fairly incomplete. Code
+    is poorly written and not documented.
+
+- 🙁 &nbsp; **Needs improvement (2 pts)**: Displays some effort. Doesn't complete all
+    components. Code is poorly written and not documented. Just contains
+    code and output but no descriptions, explanations or
+    interpretations. Possibly a major issue or mistake.
+
+- 😐 &nbsp; **Fair (3 pts)**: Decent effort. Hits all the elements. Possibly
+    a couple of minor mistakes or some non-minor issue. Fairly easy to
+    follow (both the code and the output). Nothing spectacular, either
+    bad or good.
+
+- 🙂 &nbsp; **Good (4 pts)**: Solid effort. Hits all the elements. Possibly a minor
+    mistake. Easy to follow (both the code and the output). Takes care
+    of well presented information (e.g. proper use of markdown elements,
+    no spelling issues, well organized).
+
+- 😀 &nbsp; **Excellent (5 pts)**: Code written succinctly, comprehensibly, and
+    properly formatted. Easy to follow (both the code and the output).
+    Functions are written succinctly and comprehensibly. Error checks are 
+    incorporated into functions as appropriate. Content is extremely well
+    organized. Spectacular submission, that can be used
+    as an _exemplary solution_.
+

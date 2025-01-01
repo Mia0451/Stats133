@@ -1,0 +1,594 @@
+---
+title: "HW5) Data Wrangling"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+```{r message = FALSE}
+# packages
+library(tidyverse)  # for data science
+library(lubridate)  # for working with dates
+library(tidytext)   # contains function reorder_within()
+```
+
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You can use
+    the template file `hw5-template.qmd` provided in bCourses.
+
+-   Name this file as `hw5-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `hw5-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an
+    automatic 10% deduction.
+
+-   Also, if you submit the incorrect files you will receive no credit.
+
+:::
+
+
+
+# Visualizing Household Expenditures {.unnumbered}
+
+This HW involves inspecting and visualizing data---using `"tidyverse"` tools---of 
+monthly expenditures of a family from a large city in the East Coast of the 
+United States.
+
+::: {.callout-important}
+Your graphs should be appropriate for sharing with outsiders. That means your 
+graphs should have, at least:
+
+- title
+- labels on the axes
+
+This is just a starting point. Consider including a subtitle, adopting your own 
+color scales, taking control of your legends (if any), including annotations 
+(if applicable), playing around with themes, etc.
+:::
+
+
+## Data Description {.unnumbered}
+
+The actual data table is in the file `expenses.csv` available in bCourses, 
+(see __Files/hws/hw5__) 
+<https://bcourses.berkeley.edu/courses/1531596/files/folder/hws/hw5>
+
+The CSV file contains 5 variables:
+
+- `concept`: type of expenditure
+
+- `amount`: amount (in dollars)
+
+- `date`: date (mm/dd/yy)
+
+- `category`: expenditure category
+
+- `mode`: payment mode (debit, credit)
+
+<br>
+
+The categories in variable `category` can be divided into 2 buckets:
+
+1) __Cost of living__ categories: 
+    + `insurance`
+    + `housing`
+    + `utilities`
+    + `food`
+    + `transportation`
+    + `healthcare`
+
+2) __Discretionary spending__ categories: 
+    + `recreation`
+    + `personal`
+    + `gifts`
+    + `vacations`
+
+In addition, the associated time-period goes from January 2019 to December 2023.
+
+__Some Comments:__
+
+- Most expenses are organized by month and year, although not necessarily by day. 
+Also, there may be some expenses with the correct date but placed within expenses
+of another month.
+
+
+### Importing `expenses.csv` in R {.unnumbered}
+
+Download a copy of the CSV file, and place it in your computer in the same 
+folder where you have your `qmd` file for this assignment.
+
+Here's a suggestion for importing the table into a data frame called `expenses`.
+You can use other approaches to import the data if you want.
+
+
+```{r}
+expenses = read_csv(
+  file = "expenses.csv",
+  col_types = list(
+    concept = col_character(),
+    amount = col_double(),
+    date = col_date(format = "%m/%d/%y"),
+    category = col_character(),
+    mode = col_character()
+  ))
+```
+
+
+### Adding Type of Expenses {.unnumbered}
+
+For convenience purposes, let's add a column `type` to indicate if a given
+expense has to do with "cost of living expenses" or with "discretionary" ones.
+
+```{r}
+# for convenience purposes, let's add a column "type" to group
+# "cost of living" categories, and "discretionary" categories
+cost_living_exps = c(
+  'insurance', 
+  'housing', 
+  'utilities', 
+  'food',
+  'transportation',
+  'healthcare')
+
+discretionary_exps = c(
+  'recreation',
+  'personal',
+  'gifts',
+  'vacations'
+)
+
+expenses = expenses |>
+  mutate(
+    type = case_when(
+      category %in% cost_living_exps ~ "cost-living",
+      category %in% discretionary_exps ~ "discretionary")
+  )
+```
+
+<br>
+
+
+-----
+
+
+# Very specific prompts
+
+a) Based on the column `date`, add---i.e. `mutate()`---a column `year` and a
+column `month` to the table `expenses`. Do this by using the functions `year()` and
+`month()`---which are part of the package `"lubridate"`. With the 
+updated `expenses`, display its last 10 rows.
+
+```{r}
+# your code
+expenses = mutate(expenses, year = year(date), month = month(date))
+expenses
+```
+
+<br>
+
+b) Write `dplyr` commands that let you identify which type of `category` is the 
+most frequent? In other words, which category has the largest number of 
+transactions? __Hint:__ `count()` is your friend.
+
+```{r}
+# your code
+count(expenses, category)
+```
+
+
+<br>
+
+c) Use `dplyr` commands to display the top-10 largest expenses of all time
+__excluding rent expenses__. This table should contain columns `concept`, 
+`amount`, and `date` (in that order). Content should be arranged in decreasing 
+order by `amount`. Display the obtained table.
+
+```{r}
+# your code
+filter(expenses, concept != "rent") |>
+  select(concept, amount, date) |>
+  arrange(desc(amount)) |>
+  slice(1:10)
+```
+
+<br>
+
+d) Suppose that one of your classmates wrote the following commands to obtain a
+table containing the smallest expense per month-year. Notice the `group_by()`
+command in which the function `floor_date()` is used to create an auxiliary 
+column `month_year` to indicate the year and month of the minimum expense 
+(please ignore the day value, which plays a dummy role).
+
+```{r}
+# minimum expenses per month-year
+monthly_min_expenses = expenses |>
+  group_by(month_year = floor_date(date, unit = 'month')) |>
+  summarise(min_exp = min(amount), .groups = "drop") 
+
+# display first 5 rows
+monthly_min_expenses |>
+  slice_head(n = 5)
+```
+
+Use the sample command provided above to obtain a table `monthly_expenses`
+containing the __total amount__ spent in each month, per year. To clarify: 
+each row corresponds to the total amount spent in a given month-year.
+Display the last 10 rows of your table.
+
+```{r}
+# your code
+monthly_expenses = expenses |>
+  group_by(month_year = floor_date(date, unit = 'month')) |>
+  summarise(total_amount = sum(amount), .groups = "drop") 
+
+# display first 5 rows
+monthly_expenses |>
+  slice_tail(n = 10)
+```
+
+
+<br>
+
+e) Refer to the table `monthly_expenses` obtained in the previous part. Use 
+`ggplot2` commands to visualize the total monthly expenses over time.
+
+```{r}
+# your code
+ggplot(data = monthly_expenses, aes(x = 1:nrow(monthly_expenses), y = total_amount)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Monthly expense from 2019 to 2023 (60 months)",
+       x = "Month",
+       y = "Total amounts spent") +
+  theme_minimal()
+```
+
+
+<br>
+
+f) Refer to the `expenses` table. Based on columns `month` and `amount`, use 
+`dplyr` commands to obtain a single table containing the monthly first-quartile 
+amount, the monthly median amount, and the monthly third-quartile 
+amount. To clarify: this table should have only 12 rows (one row per month).
+_Hint_: the `quantile()` function lets you compute quartiles.
+
+```{r}
+# your code
+summarise(
+  group_by(expenses, month),
+  first_quartile = quantile(amount, 0.25),
+  median = median(amount),
+  third_quartile = quantile(amount, 0.75),
+)
+```
+
+
+<br>
+
+g) Refer to the `expenses` table. Use `dplyr` commands to obtain a single table 
+containing the _average amount_ and the _median amount_ by `category`; arranging 
+values by _average amount_ (increasingly). Display the obtained table.
+
+```{r}
+# your code
+expenses |>
+  group_by(category) |>
+  summarize(average_amount = mean(amount), median_amount = median(amount)) |>
+  arrange(average_amount)
+```
+
+
+<br>
+
+h) Refer to the `expenses` table. Use `dplyr` and `ggplot2` commands to make a 
+bar-chart to visualize the __total expenses for each category__. The bars should be 
+horizontally oriented, displayed in decreasing order. __Hint__: you may need to 
+google how to `reorder()` bars in a ggplot graphic.
+
+```{r}
+# your code
+temp = expenses |>
+  group_by(category) |>
+  summarize(total_amount = sum(amount))
+
+ggplot(data = temp, aes(x = total_amount, y = reorder(category, total_amount))) + 
+  geom_bar(stat='identity') +
+  labs(title = "Total expense for each category",
+       x = "Amount",
+       y = "Category") +
+  theme_minimal()
+```
+
+
+<br>
+
+i) Refer to the `expenses` table. Use `dplyr` commands to obtain a table
+`vacations_expenses` containing the __total vacations expenses__ grouped by 
+`year` and `month`. The resulting table should have three columns (`year`, 
+`month` and `total_amount`). __Hint__: the argument `.groups = "drop"` in 
+function `summarise()` is your friend.
+
+    For displaying purposes, arrange the values decreasingly (by total spent amount), 
+and show only the top-10 total vacations expenses.
+
+```{r}
+# your code
+vacations_expenses = expenses |>
+  group_by(month_year = floor_date(date, unit = 'month')) |>
+  summarise(total_amount = sum(amount), .groups = "drop") |>
+  mutate(year = year(month_year), month = month(month_year)) |>
+  arrange(desc(total_amount)) |>
+  select(year, month, total_amount)
+
+slice_head(vacations_expenses, n = 10)
+```
+
+
+<br>
+
+j) Refer to the table `vacations_expenses`. Use `dplyr` and `ggplot2` commands 
+to make a bar-chart to visualize the __total vacations expenses by year__. 
+To clarify, this bar chart should have as many bars as years in the data.
+
+```{r}
+# your code
+per_year_expense = 
+  vacations_expenses |>
+  group_by(year) |>
+  summarise(total_amount_per_year = sum(total_amount))
+
+ggplot(data = per_year_expense, aes(x = year, y =  total_amount_per_year)) + 
+  geom_bar(stat='identity') +
+  labs(title = "Total vacations expenses by year",
+       x = "Year",
+       y = "Total amount") +
+  theme_minimal()
+```
+
+<br>
+
+
+-----
+
+
+# More open-ended questions
+
+Answer the following questions.
+
+::: {.callout-important}
+- All the graphics must include a meaningful title, and also a subtitle.
+
+- Make sure axes are labeled.
+
+- Do not use the default ggplot theme.
+
+- Likewise, include a concise description of what's going on in each graphic.
+:::
+
+
+## Mean Recreation and Personal expenses per month-year
+
+Suppose that one of your classmates wrote the following commands to obtain a
+table of mean Recreation and mean Personal expenses per month-year.
+
+```{r}
+# mean recreation exps. and mean personal exps. per month-year
+personal_recreation_expenses = expenses |>
+  filter(category %in% c("recreation", "personal")) |>
+  group_by(month_year = floor_date(date, unit = 'month'), category) |>
+  summarise(mean = mean(amount), .groups = "drop")
+
+# first 10-rows displayed (for sake of illustration)
+personal_recreation_expenses |> slice_head(n = 10)
+```
+
+Help your classmate create a ggplot graphic that allows you to compare
+timelines of the mean Recreation spent amount and the mean Personal spent amount 
+over time.
+
+```{r}
+# your code
+ggplot(data = personal_recreation_expenses, aes(x = month_year, y = mean)) +
+  geom_point(aes(color = category), size = 1) +
+  geom_line(aes(color = category)) +
+  labs(title = "Monthly expense from 2019 to 2023 (60 months)",
+       x = "Month",
+       y = "Mean amount per month") +
+  theme_minimal()
+```
+
+
+<br>
+
+
+## Trimesterly Expenditures Over Time
+
+Refer to the table `expenses`. 
+Create a visual display that lets us see the total trimesterly expenditures over 
+the provided months-years. __Hint__: like in the preceding problem, the 
+following `group_by()` command allows you to obtain a `trimester_year` variable 
+which may be very handy for computing trimesterly expenditures: 
+`group_by(trimester_year = ceiling_date(date, unit = 'season'))`
+
+```{r}
+# your code
+temp = expenses |>
+  group_by(trimester_year = ceiling_date(date, unit = 'season')) |>
+  summarise(trimester_year_amount = sum(amount), .groups = "drop") 
+
+ggplot(data = temp, aes(x = trimester_year, y = trimester_year_amount)) +
+  geom_bar(stat='identity') +
+  labs(title = "Trimesterly expenditures from 2019 to 2023",
+       x = "Season",
+       y = "Total amount") +
+  theme_minimal()
+```
+
+
+<br>
+
+
+## Cost-of-Living vs Discretionary Spending
+
+Refer to the table `expenses`. 
+Create a plot that lets us compare, over time, the cost-of-living spending 
+versus the discretionary spending.
+
+```{r}
+# your code
+temp = expenses |>
+  group_by(type, month_year = floor_date(date, unit = 'month')) |>
+  summarise(total_amount = sum(amount), .groups = "drop")
+  
+ggplot(data = temp, aes(x = month_year, y = total_amount, color=type)) +
+  geom_point(aes(color = type), size = 1) +
+  geom_line(aes(color = type)) +
+  labs(title = "Monthly expense from 2019 to 2023 (60 months) for cost-living / discretionary",
+       x = "Month",
+       y = "Total amount per month") +
+  theme_minimal()
+```
+
+
+<br>
+
+
+## Top-5 Annual Expenditure Categories
+
+
+### Example {-}
+
+Refer to the table `expenses`. 
+As an example, suppose that one of the GSIs use `dplyr` commands to obtain a
+table `top3_concept_expenses` containing the top-3 largest expenditures by 
+`concept` and `year` (a few rows shown below)
+
+```r
+top3_concept_expenses = expenses |> 
+  select(year, concept, amount) |>
+  group_by(year, concept) |>
+  summarize(max_amount = max(amount), .groups = "drop") |>
+  group_by(year) |>
+  slice_max(n = 3, order_by = max_amount)
+```
+
+```
+year  concept        max_amount
+2019  rent	            1659.95		
+2019  fitness            575.00		
+2019  trip expenses	     572.54		
+2020  retailer	        6857.00		
+2020  rent	            1699.95		
+2020  trip expenses	    1487.00		
+2021  retailer	        1826.86		
+2021  rent	            1710.95		
+2021  trip expenses	     956.54
+```
+
+To visualize this data set, the GSI employed a bar chart produced by the 
+following `ggplot` commands. Notice the use of the `reorder_wihtin()`
+function---from the package `"tidytext"`---to arrange the bars in decreasing
+order within each facet.
+
+```r
+# sample code
+# BTW: this plot needs a title, subtitle, axis labels, and a nicer theme
+top3_concept_expenses |>
+  ggplot() +
+  geom_col(aes(x = reorder_within(concept, max_amount, year), 
+               y = max_amount,
+               fill = concept)) +
+  scale_x_reordered() +
+  facet_wrap(~ year, scales = "free", strip.position = "top") +
+  coord_flip() + 
+  theme(legend.position = "none")
+```
+
+<br>
+
+### Top-5 total expenditures by `category` in each year
+
+Refer to the table `expenses`. 
+Create a visualization to display the top-5 total expenditures by `category` in 
+every year. This involves computing the total amount spent per category in each
+year, and choosing the top-5 values in each year.
+
+```{r}
+# your code
+top5_category_expenses = expenses |> 
+  select(year, category, amount) |>
+  group_by(year, category) |>
+  summarize(total_amount = sum(amount), .groups = "drop") |>
+  group_by(year) |>
+  slice_max(n = 5, order_by = total_amount)
+
+top5_category_expenses |>
+  ggplot() +
+  geom_col(aes(x = reorder_within(category, total_amount, year), 
+               y = total_amount,
+               fill = category)) +
+  scale_x_reordered() +
+  facet_wrap(~ year, scales = "free", strip.position = "top") +
+  coord_flip() + 
+  theme(legend.position = "none")
+```
+
+
+<br>
+
+-----
+
+
+## Rubric {.unnumbered .unlisted}
+
+- 😞 &nbsp; **None (0 pts)**: No submission; or terribly wrong; or incorrect files.
+
+- 😟 &nbsp; **Deficient (1 pt)**: Displays minimal effort. Fairly incomplete. Code
+    is poorly written and not documented.
+
+- 🙁 &nbsp; **Needs improvement (2 pts)**: Displays some effort. Doesn't complete all
+    components. Code is poorly written and not documented. Just contains
+    code and output but no descriptions, explanations or
+    interpretations. Possibly a major issue or mistake.
+
+- 😐 &nbsp; **Satisfactory (3 pts)**: Decent effort. Hits all the elements. Possibly
+    a couple of minor mistakes or some non-minor issue. Code is mostly okay, 
+    but some data manipulations or graphics could be done in a better way;
+    there is room for better comments, and/or format. Fairly basic plots 
+    produced with default settings (i.e. minimal or no customization). Nothing
+    spectacular, either bad or good.
+
+- 🙂 &nbsp; **Good (4 pts)**: Solid effort. Hits all the elements. Possibly a minor
+    mistake. Easy to follow (both the code and the output). Most plots are 
+    customized (labels, colors, theme, etc). Takes care of well presented 
+    information (e.g. proper use of markdown elements, no spelling issues, 
+    well organized).
+
+- 😀 &nbsp; **Excellent (5 pts)**: Finished all components of the assignment 
+correctly. Code is well-documented (both self-documented and with additional 
+comments as necessary). Graphs properly labeled/annotated. Uses non-default 
+settings, highly customizing the graphics to give them an outstanding appearance
+(i.e. publication quality). Descriptions are clear and easy to follow, either 
+because graphs are labeled clearly or you've written additional text to describe 
+how you interpret the output. Spectacular submission, that can be used as an
+_exemplary solution_.
+

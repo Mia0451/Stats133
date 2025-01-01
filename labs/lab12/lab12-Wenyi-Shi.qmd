@@ -1,0 +1,546 @@
+---
+title: "Lab-12: California Wildfires"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+```{r message=FALSE}
+# packages
+library(tidyverse)      # ecosystem of data science packages
+library(lubridate)      # for working with dates
+library(sf)             # for working with geospatial vector-data
+library(rnaturalearth)  # maps data (e.g. US States)
+library(leaflet)        # web interactive maps
+library(plotly)         # web interactive graphics
+```
+
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Use the template file `lab12-template.qmd` to answer the questions.
+
+-   Rename this file as `lab12-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab12-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`.
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+    
+-   Please note that if you submit the incorrect files you will receive no credit.
+
+:::
+
+
+# Geospatial Data in Shapefile Format
+
+In this lab, you will work with geospatial data in __shapefile__ format which
+is perhaps the most common format of geospatial 
+<a href="https://docs.qgis.org/3.34/en/docs/gentle_gis_introduction/vector_data.html" target="_blank">vector data</a>.
+
+To be more specific you will work with the **California Fire Perimeters (1950+)** 
+data.
+
+
+## Reminder: What is a shapefile?
+
+- A **shapefile** is one particular file format to store geospatial 
+vector data.
+
+- It's a common standard for handling vector data.
+
+- It's developed by [ESRI](https://en.wikipedia.org/wiki/Esri) as a mostly
+open format for GIS software products (e.g. ArcGIS).
+
+- Confusingly, a shapefile is NOT a single file, but a set of files.
+
+
+### What files are in a shapefile? {.unnumbered}
+
+There are 3 core files to have at a minimum for a shapefile:
+
+- **.shp** stores the feature geometry (e.g. points, lines, polygons).
+
+- **.dbf** stores attributes information.
+
+- **.shx** index (i.e. link) between **.shp** and **.dbf** files.
+
+
+Usually, although not always, there are other files:
+
+- **.prj** stores coordinate system information; used by ArcGIS.
+
+- **.xml** metadata in XML format about the shapefile.
+
+- **.cpg** codepage for identifying the characterset to be used.
+
+
+-----
+
+
+# CalFIRE Perimeters Data
+
+As mentioned above, the geospatial data of this lab is the so-called 
+**California Fire Perimeters (1950+)**. You can find the data, __in shapefile__ 
+format, in the folder `California_Fire_Perimeters_(1950+)` located in bCourses:
+
+<https://bcourses.berkeley.edu/courses/1536526/files/folder/labs/lab12>
+
+::: {.callout-tip}
+## In case of trouble ...
+
+If you have issues having access to the data in bCourses, you can also 
+download a compressed (_zipped_) shapefile from the URL:
+
+<https://gis.data.ca.gov/datasets/CALFIRE-Forestry::california-historical-fire-perimeters/explore?layer=2&showTable=true>
+:::
+
+
+## Importing shapefile data in R
+
+The California Fire Perimeters (1950+) data is available as a shapefile which 
+can be imported in R with the `"sf"` function `st_read()`.
+
+Assuming that you have the shapefile, and that all the associated files (e.g. 
+`.shp`, `.dbf`, `.shx`, etc) are in a folder named
+`"California_Fire_Perimeters_(1950+)"`, **located in your working directory**, 
+here's how to import the shapefile in R:
+
+```{r message=FALSE}
+# import shapefile
+cal_perims = st_read(dsn = "California_Fire_Perimeters_(1950+)") |>
+  st_transform(crs = 4326)
+```
+
+__IMPORTANT__: Notice that the CalFire Perimeter data has to do with geometric
+features of type __polygons__, or `MULTIPOLYGON` as the above output indicates.
+
+In case you are curious, the function `st_transform(crs = 4326)` allows us to
+transform or convert coordinates of an `"sf"` object. Why do we need this 
+command?
+
+It turns out that `"leaflet"` expects all point, line, and polygon vector-data 
+to be specified in longitude and latitude using the 
+_geodetic coordinate system_ WGS 84 (a.k.a. EPSG:4326). 
+
+Unfortunately, the polygons in `"California_Fire_Perimeters_(1950+)"` data,
+are not expressed in long-lat format. This is why we need `st_transform()` to
+specify the coordinate system EPSG:4326 used by leaflet.
+
+
+<br>
+
+What can kind of object is `cal_perims`?
+
+```{r}
+class(cal_perims)
+```
+
+
+As you can tell, `cal_perims` is an `sf` object, and also a `data.frame`. This 
+means we can manipulate it like any other data table in R (e.g. with `dplyr` 
+commands).
+
+```{r}
+# column names (of attributes)
+names(cal_perims)
+```
+
+Some of the relevant attributes for our discussion are:
+
+| Column      | Type | Description                  |
+|-------------|------|------------------------------|
+| `YEAR_`     | chr  | Fire Year                    |
+| `FIRE_NAME` | chr  | Name of the fire             |
+| `ALARM_DATE`| date | Alarm date for fire          |
+| `CONT_DATE` | date | Containment data for fire    |
+| `CAUSE`     | chr  | Reason fire ignited          |
+| `GIS_ACRES` | dbl  | GIS calculated area in acres |
+| `DECADES`   | dbl  | Decade                       |
+
+
+```{r}
+#| echo: true
+# a few attributes
+cal_perims |>
+  select(YEAR_, FIRE_NAME, ALARM_DATE, CONT_DATE, CAUSE, GIS_ACRES, DECADES) |>
+  slice_head(n = 3)
+```
+
+
+## Your Turn: Adding a `MONTH` column to `cal_perims`
+
+Use `mutate()` to add a column `MONTH` to `cal_perims` by extracting the 
+`month()` from `ALARM_DATE`
+
+```{r}
+# your code
+cal_perims = mutate(cal_perims, MONTH = month(ALARM_DATE))
+```
+
+
+## Your Turn: Adding a `SEASON` column to `cal_perims`
+
+Use `mutate()` to add a column `SEASON` to `cal_perims` based on the values 
+of `MONTH`:
+
+- `MONTH %in% c(1, 2, 12)` should have a season value `"Winter"` 
+
+- `MONTH %in% 3:5` should have a season value `"Spring"` 
+
+- `MONTH %in% 6:8` should have a season value `"Summer"` 
+
+- `MONTH %in% 9:11` should have a season value `"Fall"` 
+
+_Hint:_ the function `case_when()` is your fried.
+
+```{r}
+# your code
+cal_perims = mutate(cal_perims, SEASON = case_when(
+    MONTH %in% c(1, 2, 12) ~ "Winter",
+    MONTH %in% 3:5 ~ "Spring",
+    MONTH %in% 6:8 ~ "Summer",
+    MONTH %in% 9:11 ~ "Fall"
+  ))
+```
+
+
+## Your Turn: Adding a `COLOR` column to `cal_perims`
+
+Use `mutate()` to add a column `COLOR` to `cal_perims` based on the values 
+of `SEASON`:
+
+- `SEASON == "Winter"` should have a color `"#4C69C5"`
+
+- `SEASON == "Spring"` should have a color `"#3ABEA8"`
+
+- `SEASON == "Summer"` should have a color `"#FF964E"`
+
+- `SEASON == "Fall"` should have a color `"#FFC84E"` 
+
+_Hint:_ the function `case_when()` is your fried.
+
+```{r}
+# your code
+cal_perims = mutate(cal_perims, COLOR = case_when(
+    SEASON == "Winter" ~ "#4C69C5",
+    SEASON == "Spring" ~ "#3ABEA8",
+    SEASON == "Summer" ~ "#FF964E",
+    SEASON == "Fall" ~ "#FFC84E"
+  ))
+```
+
+
+-----
+
+
+# Web Interactive Map of California
+
+As you know, the `"leaflet"` package lets you create web-interactive maps very 
+easily. Recall that you create a Leaflet map with these basic steps:
+
+1) Create a map widget by calling `leaflet()`.
+
+2) Add layers to the map by using layer functions---e.g. 
+`addTiles()`, `addMarkers()`, `addPolygons()`---to modify the map widget.
+
+3) Repeat step 2 as desired.
+
+Here's a minimal map with a view centered around California:
+
+```{r}
+# Map of California
+leaflet() |>
+  setView(lng = -119, lat = 37, zoom = 5) |>
+  addTiles()
+```
+
+
+-----
+
+
+# Plot Wildfires
+
+Say we want to visualize wildfires that occurred in 2017. The first step 
+involves subsetting the `cal_perims` data for that year:
+
+```{r}
+cal_perims_2017 = cal_perims |>
+  filter(YEAR_ == 2017)
+```
+
+Then, we can pass this table to `leaflet()`, adding the `addPolygons()`
+layer. It is important to mention that `addPolygons()` understands how to 
+plot the `MULTIPOLYGON` values in the `"sf"` object `cal_perims_2017`.
+
+```{r}
+cal_perims_2017 |> 
+  leaflet() |>
+  setView(lng = -119, lat = 37, zoom = 6) |>
+  addTiles() |> 
+  addPolygons()
+```
+
+\
+
+## Your Turn
+
+Make another plot of fire perimeters in 2017, but this time change the 
+values of the following `addPolygons()` arguments:
+
+- `color = "tomato"`: changes the color of the perimeters
+
+- `opacity = 0.9`: 90% opacity of the border (of the polygons)
+
+- `weight = 1`: thickness of the border (of the polygons)
+              
+- `label = ~FIRE_NAME`: displays the name of the fire when you hover over a
+given polygon.
+
+```{r}
+# your code
+cal_perims_2017 |> 
+  leaflet() |>
+  setView(lng = -119, lat = 37, zoom = 6) |>
+  addTiles() |> 
+  addPolygons(color = "tomato", opacity = 0.9, weight = 1, label = ~FIRE_NAME)
+```
+
+
+\
+
+## Mapping Large Fires in 2017
+
+We may be interested in visualizing only _large_ wildfires. How large? For 
+example, we could filter those fires with a burned area (`GIS_AREA`) greater
+than or equal to 5,000 acres.
+
+```{r}
+# Big fires (acres >= 5000), with custom LABEL
+big_fires_2017 = cal_perims |>
+  filter(YEAR_ == 2017 & GIS_ACRES >= 5000)
+```
+
+Having obtained the subset of `big_fires_2017` data, we can show a table with 
+the top-10 largest fires. __Note__: Keep in mind that `big_fires_2017` is an 
+`"sf"` object, and therefore it includes the `geometry` of the polygons. In 
+order to show a table with just columns `FIRE_NAME` and `GIS_ACRES`, it's 
+better to create this table, and drop its `geometry` element so that it doesn't
+clutter the output:
+
+```{r}
+# for displaying purposes, we drop the geometry attribute 
+# (so that it doesn't clutter the output)
+big_fires_2017_table = big_fires_2017 
+big_fires_2017_table$geometry = NULL
+
+big_fires_2017_table |>
+  select(FIRE_NAME, GIS_ACRES) |>
+  arrange(desc(GIS_ACRES)) |>
+  slice_head(n = 10)
+```
+
+
+## Your Turn: Plotting Big Fires in 2017
+
+Use the `big_fires_2017` data to make a map of _big fires_ during that year.
+Customize more `addPolygons()` arguments such as:
+
+- `weight`, `color`, and `opacity`: thickness and color of border of polygons
+
+- `fillColor` and `fillOpacity`: fill color and opacity of polygons
+
+- `label`
+
+```{r}
+# your code
+big_fires_2017 |> 
+  leaflet() |>
+  setView(lng = -119, lat = 37, zoom = 6) |>
+  addTiles() |> 
+  addPolygons(color = "tomato", opacity = 0.9, weight = 1, label = ~FIRE_NAME, fillColor = ~COLOR, fillOpacity = 0.7)
+```
+
+\
+
+-----
+
+
+# Using tiles from 3rd party providers
+
+A very nice feature of `"leaflet"` is that we can change the map tiles using a 
+3rd party provider. To do this we use `addProviderTiles()`. A complete list of 
+tile providers is available at:
+
+<a href="https://leaflet-extras.github.io/leaflet-providers/preview/" target="_blank">https://leaflet-extras.github.io/leaflet-providers/preview/</a>
+
+Here's one example using `"CartoDB.Positron"` tiles. Notice the custom `label`
+that pastes `FIRE_NAME` and `ALARM_DATE`.
+
+```{r}
+# map with tiles from CartoDB.Positron 
+leaflet(data = big_fires_2017) |>
+  setView(lng = -119, lat = 37, zoom = 6) |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(color = "tomato",
+              opacity = 0.9,
+              weight = 1,
+              label = ~paste0(FIRE_NAME, ", ", ALARM_DATE))
+```
+
+
+## Your Turn: Use a 3rd party provider
+
+Look at the map tiles from 3rd party providers (link below), and choose one of 
+them to make another map of fire perimeters. You can use the 2017 fires, or if 
+you want, filter data from another `YEAR_`.
+
+<a href="https://leaflet-extras.github.io/leaflet-providers/preview/" target="_blank">https://leaflet-extras.github.io/leaflet-providers/preview/</a>
+
+::: {.callout-warning}
+## Potential issues with 3rd party providers
+
+It is possible that some of the 3rd party providers don't work. If you try a 
+provider and don't see a map, then choose another provider.
+:::
+
+```{r}
+# your code
+leaflet(data = big_fires_2017) |>
+  setView(lng = -119, lat = 37, zoom = 6) |>
+  addProviderTiles("USGS.USImagery") |>
+  addPolygons(color = "tomato",
+              opacity = 0.9,
+              weight = 1,
+              label = ~paste0(FIRE_NAME, ", ", ALARM_DATE))
+```
+
+
+\
+
+-----
+
+
+# Plotting Summaries
+
+Last but not least, we can also explore certain summary trends over the entire 
+time span of the data.
+
+::: {.callout-note}
+## Making a copy of the data
+
+Since `cal_perims` is an object of class `"sf"` (simple features), it includes
+the `geometry` feature (which contains the coordinates of the polygons).
+
+To compute summary statistics, it's more convenient if we make a copy of 
+`cal_perims` and remove `geometry` from such a copy.
+:::
+
+```{r}
+# make a copy of cal_perims, and then remove "geometry"
+cal_perims_copy = cal_perims
+cal_perims_copy$geometry = NULL
+```
+
+We then proceed summarizing `cal_perims_summary` as usual:
+
+```{r eval = FALSE}
+# This is a sample abstract command
+# (you should be able to fill in the blanks ...)
+cal_perims_summary = cal_perims_summary |>
+  group_by(...) |>
+  summarise(
+    stat1 = ...,
+    stat2 = ...,
+    # etc
+  )
+```
+
+
+## Your Turn: Computing and Graphing Summaries
+
+Refer to the object `cal_perims_copy`. Create a table `cal_perims_summary` by 
+grouping by `YEAR_` and `summarize()` the following:
+
+- `num_fires`: number of fires, _hint:_ the function `n()` is your friend.
+
+- `total_area`: total burned area (`GIS_ACRES`).
+
+- `mean_area`: mean burned area (`GIS_ACRES`).
+
+- `median_area`: median burned area (`GIS_ACRES`).
+
+
+```{r}
+# your code
+cal_perims_summary = cal_perims_copy |>
+  group_by(YEAR_) |>
+  summarise(
+    num_fires = n(),
+    total_area = sum(GIS_ACRES),
+    mean_area = mean(GIS_ACRES),
+    median_area = median(GIS_ACRES),
+  )
+```
+
+
+## Your Turn
+
+Use your `cal_perims_summary` table to make bar charts of:
+
+a) the total number of fires per year,
+b) the total burned area per year,
+c) the mean burned area per year,
+d) the mean burned area per year.
+
+We recommend that you graph your bar charts with `ggplotly()`
+
+```{r}
+# your code
+plot <- ggplot(cal_perims_summary, aes(x = YEAR_, y = num_fires)) +
+    geom_bar(stat="identity", width=.5, position = "dodge") +
+  labs(title = "California Fire Perimeters (1950+)",
+       x = "Year",
+       y = "# of fires") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+plot2 <- ggplot(cal_perims_summary, aes(x = YEAR_, y = total_area)) +
+    geom_bar(stat="identity", width=.5, position = "dodge") +
+  labs(title = "California Fire Perimeters (1950+)",
+       x = "Year",
+       y = "Total areas") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+plot3 <- ggplot(cal_perims_summary, aes(x = YEAR_, y = mean_area)) +
+    geom_bar(stat="identity", width=.5, position = "dodge") +
+  labs(title = "California Fire Perimeters (1950+)",
+       x = "Year",
+       y = "Mean area") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+plot4 <- ggplot(cal_perims_summary, aes(x = YEAR_, y = median_area)) +
+    geom_bar(stat="identity", width=.5, position = "dodge") +
+  labs(title = "California Fire Perimeters (1950+)",
+       x = "Year",
+       y = "Median area") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+ggplotly(plot)
+ggplotly(plot2)
+ggplotly(plot3)
+ggplotly(plot4)
+```
+
+

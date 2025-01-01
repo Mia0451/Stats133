@@ -1,0 +1,84 @@
+---
+title: "Lab2 Demo"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+vec = c(2, 3, 18)
+vec
+```
+
+```{r}
+vec[-1]
+```
+
+```{r}
+vec[c(1, 2)]
+```
+
+```{r}
+abs(-3)
+```
+
+```{r}
+seq(from = 5, to = 20, by = 2)
+```
+
+```{r}
+seq(from = 5, to = 20, length.out = 10)
+```
+
+```{r}
+vec[c(TRUE, FALSE, TRUE)]
+```
+
+```{r}
+10 == 5
+10 < 5
+10 > 5
+sum(vec)
+sum(vec > 4)
+```
+
+We can also combine conditions
+
+```{r}
+(10 > 5) & (2 > 3)
+(10 > 5) | (2 > 3)
+name[region == 'west']
+```
+
+```{r}
+name[region] == "Northeast"
+income[region] == "Northeast"
+
+med_income = median(income[region == "Northeast"])
+name[income == med_income]
+```
+
+```{r}
+length(name)
+```
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

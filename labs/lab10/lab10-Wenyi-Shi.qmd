@@ -1,0 +1,480 @@
+---
+title: "Lab-10: Tidytext"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)    # ecosystem of data science packages 
+library(tidytext)     # text mining with tidy tools
+library(janeaustenr)  # texts of Jane Austen's novels
+```
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Use the template file `lab10-template.qmd` to answer the questions.
+
+-   Rename this file as `lab10-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab10-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`.
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+    
+-   Please note that if you submit the incorrect files you will receive no credit.
+
+:::
+
+
+This lab requires the following packages:
+
+- `"tidyverse"`: ecosystem of data science packages
+- `"tidytext"`: text mining with tidy tools
+- `"janeaustenr"`: text of Jane Austen's novels
+
+
+# Introduction
+
+The data for this lab involves the text from Jane Austen's novels that 
+come in the package `"janeaustenr"`.
+
+As we've seen it in class, the text of each novel is available as a character
+vector:
+
+- `emma`: Emma
+- `mansfieldpark`: Mansfield Park
+- `northangerabbey`: Northanger Abbey
+- `persuasion`: Persuasion
+- `prideprejudice`: Pride and Prejudice
+- `sensesensibility`: Sense and Sensibility
+
+For data manipulation purposes, it's better if we encapsulate a character 
+vector into a data.frame or a tibble:
+
+```{r}
+pride_dat = tibble(text = prideprejudice)
+```
+
+
+## Tokenization
+
+The first step is to __tokenize__ the novel's text, that is, to break the text
+apart into individual pieces of "information" called __tokens__, also referred
+to as __words__. This can be easily done with the `"tidytext"` function
+`unnest_tokens()`:
+
+```{r}
+pride_tokens = unnest_tokens(tbl = pride_dat, output = word, input = text)
+head(pride_tokens, 10)
+```
+
+
+# Sentiment Analysis using Bing's Lexicon
+
+`"tidytext"` comes with the `sentiments` dataset that contains 
+a dictionary or __lexicon__ (curated by Bing Liu) of words and their associated
+sentiment. 
+
+```{r}
+rbind(head(sentiments, 5), tail(sentiments, 5))
+```
+
+Bing Liu's sentiment lexicon contains many English words. Each word has been
+assigned a sentiment label `positive` or `negative`.
+
+In addition to the `sentiments` dataset, `"tidytext"` also has the 
+`get_sentiments()` function that allows us to obtain more sentiment lexicons:
+
+- `"afinn"`: from Finn Arup Nielsen; this lexicon assigns words with a score
+that runs between -5 and 5, with negative scores indicating negative sentiment
+and positive scores indicating positive sentiment.
+
+- `"nrc"`: from Saif Mohammad and Peter Turney; this lexicon categorizes words 
+in a binary fashion (`"yes"` / `"no"`) into categories of positive, negative, 
+anger, anticipation, disgust, fear, joy, sadness, surprise, and trust.
+
+- `"loughran"`: another lexicon somewhat similar to `"afinn"`.
+
+For example, here's how to download the `"afinn"` lexicon. Note that R
+will ask for your permission to download the data.
+
+```r
+# this is an interactive function!
+get_sentiments("afinn")
+```
+
+## Sentiment Analysis with Inner Join
+
+Let's use the `sentiments` data set in order to compute a sentiment score
+for _Pride and Prejudice_. The sentiments of words can be added to our data
+table with an inner join via `inner_join()`.
+
+```{r}
+pride_sentiments <- pride_tokens |>
+  inner_join(sentiments, by = "word")
+
+head(pride_sentiments, 5)
+```
+
+
+### Graphing Frequencies
+
+We can get frequencies of the words and their sentiments, and then graph them
+with `ggplot()`.
+Notice that the word `"miss"` is being handled by the sentiment lexicons 
+as related to the verb _to miss_, instead of a title prefixed to the name of 
+a woman as in _miss Emma_. Because of this, `"miss"` gets a negative sentiment.
+
+```{r}
+pride_sentiments |>
+  count(word, sentiment, sort = TRUE) |>
+  slice_head(n = 20) |>
+  ggplot() +
+  geom_col(aes(y = reorder(word, n), x = n, fill = sentiment)) +
+  labs(title = "20 most common words and their sentiment",
+       subtitle = "Pride and Prejudice",
+       y = "",
+       x = "count")
+```
+
+
+## Your Turn: Sentiments in Persuasion
+
+Repeat the sentiment analysis steps performed on `prideandprejudice` but now
+applied on `persuasion`, and create a barchart to visualize the 20 most common
+words and their associated sentiment.
+
+```{r}
+# your code
+persuasion_dat = tibble(text = persuasion)
+persuasion_tokens = unnest_tokens(tbl = persuasion_dat, output = word, input = text)
+persuasion_sentiments <- persuasion_tokens |>
+  inner_join(sentiments, by = "word")
+persuasion_sentiments |>
+  count(word, sentiment, sort = TRUE) |>
+  slice_head(n = 20) |>
+  ggplot() +
+  geom_col(aes(y = reorder(word, n), x = n, fill = sentiment)) +
+  labs(title = "20 most common words and their sentiment",
+       subtitle = "Persuasion",
+       y = "",
+       x = "count")
+```
+
+
+
+<br>
+
+-----
+
+
+# Most Common Positive and Negative Words
+
+We can also analyze word counts that contribute to a given sentiment.
+
+```{r}
+bing_word_counts <- pride_tokens |>
+  inner_join(sentiments, by = "word") |>
+  count(word, sentiment, sort = TRUE) |>
+  ungroup()
+
+head(bing_word_counts)
+```
+
+This can be shown visually:
+
+```{r}
+bing_word_counts |>
+  group_by(sentiment) |>
+  slice_head(n = 10) |>
+  ungroup() |>
+  mutate(word = reorder(word, n)) |>
+  ggplot(aes(y = word, x = n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL,
+       title = "Words that contribute to positive and negative sentiments")
+```
+
+Again, the word `"miss"` is coded as negative because of the verb _to miss_.
+But in most of Jane Austen's novels, this word has the connotation of a title
+for young (unmarried) women. We can create our own custom set of stop-words
+that includes `"miss"`
+
+```{r}
+custom_stop_words <- bind_rows(
+  data.frame(
+    word = "miss", 
+    lexicon = "custom"),
+  stop_words
+)
+
+head(custom_stop_words, 5)
+```
+
+And then, replot the words that have the largest contribution to positive and
+negative sentiment in Pride and Prejudice:
+
+```{r}
+pride_tokens |>
+  anti_join(custom_stop_words, by = "word") |>
+  inner_join(sentiments, by = "word") |>
+  count(word, sentiment, sort = TRUE) |>
+  ungroup() |>
+  group_by(sentiment) |>
+  slice_head(n = 10) |>
+  mutate(word = reorder(word, n)) |>
+  ggplot(aes(y = word, x = n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL,
+       title = "Words that contribute to positive and negative sentiments")
+```
+
+
+<br>
+
+
+## Your Turn: Contribution to Sentiments in Persuasion
+
+Repeat the contribution to sentiment analysis performed on `prideandprejudice` 
+but now applied on `persuasion`, and create a facet barchart to visualize the 
+10 most common words associated to each sentiment.
+
+```{r}
+# your code
+custom_stop_words <- bind_rows(
+  data.frame(
+    word = "miss", 
+    lexicon = "custom"),
+  stop_words
+)
+
+persuasion_tokens |>
+  anti_join(custom_stop_words, by = "word") |>
+  inner_join(sentiments, by = "word") |>
+  count(word, sentiment, sort = TRUE) |>
+  ungroup() |>
+  group_by(sentiment) |>
+  slice_head(n = 10) |>
+  mutate(word = reorder(word, n)) |>
+  ggplot(aes(y = word, x = n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL,
+       title = "Words that contribute to positive and negative sentiments - Persuasion")
+
+```
+
+
+<br>
+
+-----
+
+
+# Bigrams containing word 'happy'
+
+Given that "happy" is the most common positive word, we could explore how this
+term is associated with other tokens. One idea is to get all bigrams (i.e. pair 
+of words) and filter those that contain the word "happy"
+
+```{r}
+# step 1) get bigrams
+pride_bigrams <- pride_dat |>
+  unnest_tokens(
+    output = bigram, 
+    input = text, 
+    token = "ngrams", 
+    n = 2)
+
+# step 2) filter those containing "happy"
+bigrams_separated <- pride_bigrams |>
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+happy_bigrams = pride_bigrams |>
+  filter(str_detect(bigram, "happy")) |>
+  count(bigram, sort = TRUE, name = "count")
+
+happy_bigrams |>
+  slice_head(n = 10)
+```
+
+Once we have those "happy" bigrams, we can plot the top-10:
+
+```{r}
+happy_bigrams |>
+  slice_head(n = 10) |>
+  ggplot(aes(x = count, y = reorder(bigram, count))) +
+  geom_col() +
+  labs(title = "Top-10 bigrams containing word 'happy'",
+       subtitle = "Stop-words have not been removed",
+       y = "bigram")
+```
+
+
+<br>
+
+
+## Your Turn: Exploring certain bigrams in Persuasion
+
+Based on one or more of the most common sentiment words in `persuasion`,
+search for their bigrams, and graph the top-10 or the top-15 most common 
+ones.
+
+```{r}
+# your code. I will choose word happy since it is also the most positive word in Persuasion.
+# step 1) get bigrams
+persuasion_bigrams <- persuasion_dat |>
+  unnest_tokens(
+    output = bigram, 
+    input = text, 
+    token = "ngrams", 
+    n = 2)
+
+# step 2) filter those containing "happy"
+persuasion_bigrams_separated <- persuasion_bigrams |>
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+persuasion_happy_bigrams = persuasion_bigrams |>
+  filter(str_detect(bigram, "happy")) |>
+  count(bigram, sort = TRUE, name = "count")
+
+persuasion_happy_bigrams |>
+  slice_head(n = 15) |>
+  ggplot(aes(x = count, y = reorder(bigram, count))) +
+  geom_col() +
+  labs(title = "Top-15 bigrams containing word 'happy'",
+       subtitle = "Stop-words have not been removed",
+       y = "bigram")
+```
+
+
+<br>
+
+-----
+
+
+# Change of sentiments throughout a novel
+
+In addition to focusing on word's sentiments, we can also take into account 
+the "flow" of sentiments along the text.
+
+
+## Adding a `linenumber` column
+
+To take the idea of _flow_ into account, we need to keep track of the "place"
+or location where a token occurs. To do this, we'll add an auxiliary column
+`linenumber` to the data table indicating on which line of text a word occurs.
+After that, we proceed as usual with the tokenizing phase:
+
+```{r}
+pride_tokens <- pride_dat |>
+  mutate(linenumber = row_number()) |>
+  unnest_tokens(output = word, input = text)
+
+head(pride_tokens)
+```
+
+The next step involves assigning sentiments; we'll keep using Bing's lexicon
+`sentiments`:
+
+```{r}
+pride_sentiments <- pride_tokens |>
+  inner_join(sentiments, by = "word")
+
+head(pride_sentiments, n = 5)
+```
+
+As you can tell, the first 2 rows correspond to words `pride` and `prejudice`. 
+These words appear in the first line of text: `linenumber = 1`. They are 
+basically the words of the title _Pride and Prejudice_. The word `pride` has
+a positive sentiment, whereas `prejudice` has a negative sentiment.
+
+
+## Adding an `index` column
+
+Again, because we are interested in the _sentiment flow_ of the story, it is
+convenient to consider blocks or sections of text formed by a certain number
+of lines. An important question is: how many lines of text should we take into
+account to define what a "section" is? This is an open ended question and 
+you have to pick a number by trial and error.
+
+In a somewhat arbitrary way, let's choose 80 lines of text as a reasonable number
+to divide the entire novel into sections of this size:
+
+```{r}
+pride_sections <- pride_sentiments |>
+  count(index = linenumber %/% 80, sentiment)
+
+head(pride_sections)
+```
+
+Notice the use of the `%/%` operator which is the integer division, and allows
+us get an index to keep track of where we are in the narrative.
+
+For each section, we'll obtain a sentiment score by counting the number of
+positive words minus the number of negative words. This is done with the help
+of the `pivot_wider()` function:
+
+```{r}
+pride_sentim_flow <- pride_sections |>
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |>
+  mutate(sentiment = positive - negative)
+
+head(pride_sentim_flow, 10)
+```
+
+Now we can graph these sentiment scores across the plot trajectory of the novel:
+
+```{r}
+ggplot(data = pride_sentim_flow,
+       aes(x = index, y = sentiment, fill = factor(sign(sentiment)))) +
+  geom_col(show.legend = FALSE) +
+  theme_bw() +
+  labs(title = "Sentiment through the narrative of Pride and Prejudice")
+```
+
+<br>
+
+
+## Your Turn: Sentiment Flow in Persuasion
+
+Repeat the sentiment flow analysis steps performed on `prideandprejudice` but 
+now applied on `persuasion`, and create a barchart to visualize such a flow.
+
+```{r}
+# your code
+persuasion_tokens <- persuasion_dat |>
+  mutate(linenumber = row_number()) |>
+  unnest_tokens(output = word, input = text)
+
+persuasion_sentiments <- persuasion_tokens |>
+  inner_join(sentiments, by = "word")
+
+persuasion_sections <- persuasion_sentiments |>
+  count(index = linenumber %/% 80, sentiment)
+
+persuasion_sentim_flow <- persuasion_sections |>
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |>
+  mutate(sentiment = positive - negative)
+
+ggplot(data = persuasion_sentim_flow,
+       aes(x = index, y = sentiment, fill = factor(sign(sentiment)))) +
+  geom_col(show.legend = FALSE) +
+  theme_bw() +
+  labs(title = "Sentiment through the narrative of Persuasion")
+
+```

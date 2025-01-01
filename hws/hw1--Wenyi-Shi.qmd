@@ -1,0 +1,418 @@
+---
+title: "HW1) Vectors"
+subtitle: "Stat 133, Fall 2024"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: default
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Write your code and content in a `qmd` (quarto markdown) file. You can use the template file `hw1-template.qmd` provided in bCourses.
+
+-   Name this file as `hw1-first-last.qmd`, where `first` and `last` are your first and last names (e.g. `hw1-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your `qmd` and HTML files to the corresponding assignment submission in bCourses.
+
+-   Please note that submitting only one of the files will result in an automatic 10% deduction.
+
+-   Also, **if you submit the incorrect files you will receive no credit.**
+:::
+
+------------------------------------------------------------------------
+
+# Future Value of Ordinary Annuity
+
+Consider the following formula for computing what is known as the **Future Value of Ordinary Annuity**:
+
+```{=tex}
+\begin{equation}
+\label{eqn:fva}
+\text{FV} = \text{PMT} \times \frac{ \Big(1 + \frac{r}{k} \Big)^{nk} - 1}{r/k} \\
+\end{equation}
+```
+where:
+
+-   $\text{FV}$ = future value (amount accumulated)
+
+-   $\text{PMT}$ = periodic contribution made at the end of each period
+
+-   $r$ = annual interest rate (i.e. annual rate of return)
+
+-   $n$ = number of years
+
+-   $k$ = number of compounding periods per year (typically 12: monthly)
+
+<br>
+
+**What it is**: The future value of an ordinary annuity is a calculation that measures how much a series of fixed contributions (i.e. payments)---made at the end of each period---would be worth at a specific date in the future when paired with a particular interest rate (or rate of return).
+
+The contribution periods of an annuity are usually yearly ($k = 1$), twice yearly ($k = 2$), quarterly ($k = 4$) and monthly ($k = 12$).
+
+**How to use it**: When you are calculating the future value of an annuity, you are looking at the total sum of all the payments made during that time period as well as the interest they would accumulate.
+
+**Best for**: See what it costs to pay someone with regular payments over time or upfront. Examples: child support, insurance, savings, retirement plans, etc.
+
+## Luke's Annuity
+
+Write R code to answer the following question.
+
+23-year old Luke plans to make periodic contributions of \$200 at the end of each month in some stock index fund for the next 30 years. How much money will Luke have 30 years from now if the (average) annual rate of return of their investment is 10%?
+
+```{r}
+# your code
+PMT = 200
+r = 0.1
+n = 30
+k = 12
+
+#FV <- 200 *((1 + 0.1 / 12) ^ ( 30 * 12) - 1) /(0.1 / 12)
+FV <- PMT * ((1 + r / k) ^ (n * k) - 1) / (r / k)
+FV
+```
+
+## Leia's Annuity
+
+Write R code to answer the following question.
+
+Luke's twin sister Leia has a similar plan: make periodic contributions of \$200 at the end of each month in some stock index fund. The difference is that Leia wants to do this for 40 years. How much money will she have 40 years from now if the (average) annual rate of return of their investment is also 10%?
+
+```{r}
+# your code
+#FV <- 200 *(((1 + 0.1 / 12) ^ ( 40 * 12) - 1) /(0.1 / 12))
+PMT = 200
+r = 0.1
+n = 40
+k = 12
+
+FV <- PMT * ((1 + r / k) ^ (n * k) - 1) / (r / k)
+FV
+```
+
+## Han's Annuity
+
+Write R code to answer the following question.
+
+Like Luke and Leia, Han also wants to make periodic contributions at the end of each month in some stock index fund. The issue is that Han is only willing to save and invest during a 10-year period. Assuming that the average annual rate of return is also 10%, how much money should Han contribute monthly in order to become a millionaire ten years from now (i.e. reaching at least 1 million dollars in 10 years)? For sake of simplicity, suppose that Han only contributes round amounts (i.e. amounts with no cents).
+
+*Hint*: use a trial-and-error process for various values of $\text{PMT}$ to find the answer.
+
+```{r}
+# your code
+FV = 1000000
+r = 0.1
+n = 10
+k = 12
+
+PMT <- FV / (((1 + r / k) ^ (n * k) - 1) / (r / k))
+PMT <- ceiling(PMT)
+PMT
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Rank Correlation Coefficient (aka Spearman's correlation)
+
+Consider the following data on $X$ = miles-per-gallon and $Y$ = horsepower of five vehicles:
+
+```{r}
+# miles-per-gallon
+mpg = c(22.8, 21.4, 14.3, 24.4, 17.8)
+
+# horsepower
+hp = c(93, 110, 245, 62, 123)
+```
+
+## (Pearson's) Correlation Coefficient $r$ {.unnumbered}
+
+As you may know, we can calculate the (Pearson's) correlation coefficient $r$ to measure the degree of linear association between $X$ and $Y$
+
+$$
+r = \frac{\sum (x_i - \bar{x}) (y_i - \bar{y})}{\sqrt{\sum(x_i - \bar{x})^2} \ \sqrt{\sum(y_i - \bar{y})^2}}
+$$
+
+where $\bar{x}$ and $\bar{y}$ are the mean of $X$ and $Y$, respectively, given by:
+
+$$
+\bar{x} = \frac{x_1 + x_2 + \dots + x_n}{n} = \frac{1}{n} \sum_{i=1}^{n} x_i 
+$$
+
+and
+
+$$
+\bar{y} = \frac{y_1 + y_2 + \dots + y_n}{n} = \frac{1}{n} \sum_{i=1}^{n} y_i 
+$$
+
+<br>
+
+In R, the function `cor()` returns this type of correlation:
+
+```{r}
+# (Pearson's) correlation coefficient
+cor(mpg, hp)
+```
+
+## Spearman's Rank Correlation Coefficient $r_S$ {.unnumbered}
+
+An alternative correlation measure is given by the so-called **Rank correlation coefficient** (denoted $r_S$---$S$ for Spearman). This is found by calculating $r$ in the usual way but using the **ranks** instead of the actual data values .
+
+Ranking the `mpg` and `hp` data (in increasing order), we get the following values:
+
+```         
+mpg   22.8  21.4  14.3  24.4  17.8
+rank    4     3     1     5     2
+
+hp    93  110  245  62  123
+rank   2    3    5   1    4
+```
+
+In R, you can use the `rank()` function to obtain the ranks of `mpg` and `hp`
+
+```{r}
+rank(mpg)
+
+rank(hp)
+```
+
+Doing the math (on the ranked values), the computed rank correlation coefficient turns out to be $r_S$ = `r cor(rank(mpg), rank(hp))`.
+
+## Computing Rank Correlation Coefficient
+
+Consider the following data on $X$ = height and $Y$ = weight of five-year-old children:
+
+```{r}
+# height (in inches)
+height = c(40.9, 44.0, 44.1, 44.6, 42.5, 46.3, 43.3, 46.2, 43.9, 43.0)
+
+# weight (in pounds)
+weight = c(35.2, 40.7, 46.5, 39.2, 44.0, 50.2, 45.0, 48.0, 42.2, 37.0)
+```
+
+<br>
+
+a)  Without invoking the function `mean()`, write R code to compute $\bar{x}$ and $\bar{y}$ using the ranks of `height` and `weight`. To be clear: you are allowed to use the `rank()` function. Display your computed values.
+
+*Hint*: Vectorized code is your friend; also take a look at the Math functions in the cheat-sheet [base-r-cheatsheet.pdf](https://stat133.berkeley.edu/fall-2024/cheatsheets/base-r-cheatsheet.pdf).
+
+```{r}
+mean_rank_height = sum(rank(height)) / length(height)
+mean_rank_weight = sum(rank(weight)) / length(weight)
+mean_rank_height
+mean_rank_weight
+```
+
+<br>
+
+b)  Without invoking the functions `mean()`, `var()`, `sd()`, or `cor()`, write R code to compute the Rank correlation coefficient $r_S$ of `height` and `weight` (using their ranks!). Display your computed $r_S$.
+
+*Hint*: Vectorized code is your friend; also take a look at the Math functions in the cheat-sheet [base-r-cheatsheet.pdf](https://stat133.berkeley.edu/fall-2024/cheatsheets/base-r-cheatsheet.pdf).
+
+```{r}
+# your code
+mean_rank_height = sum(rank(height)) / length(height)
+mean_rank_weight = sum(rank(weight)) / length(weight)
+
+rank_height_minus_mean = rank(height) - rep(mean_rank_height, length(height))
+rank_weight_minus_mean = rank(weight) - rep(mean_rank_weight, length(weight))
+
+numerator = sum(rank_height_minus_mean * rank_weight_minus_mean)
+denominator = sqrt(sum(rank_height_minus_mean * rank_height_minus_mean)) * sqrt(sum(rank_weight_minus_mean * rank_weight_minus_mean))
+
+numerator / denominator
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Cal Women's Soccer Game-by-Game Results (2023)
+
+The (raw) data for this problem has to do with Cal Women's Soccer game-by-game results---playing at home---in the 2023 season, displayed in the table below.
+
+Source: <https://calbears.com/sports/womens-soccer/stats/>.
+
+| opponent      | win   | cal_score | opp_score | attend |
+|---------------|-------|-----------|-----------|--------|
+| San Francisco | TRUE  | 5         | 1         | 885    |
+| Cal Poly      | TRUE  | 2         | 0         | 846    |
+| Santa Clara   | FALSE | 0         | 0         | 150    |
+| Fullerton     | FALSE | 0         | 1         | 312    |
+| Utah Valley   | FALSE | 1         | 1         | 194    |
+| Arizona       | TRUE  | 2         | 1         | 212    |
+| Arizona St    | FALSE | 1         | 1         | 707    |
+| Washington St | FALSE | 1         | 1         | 179    |
+| Oregon        | TRUE  | 8         | 1         | 206    |
+| Oregon St     | TRUE  | 3         | 0         | 550    |
+
+## Creating Vectors
+
+Create vectors for the columns in the data table displayed above, according to the following data types. If there are missing values, encode them as `NA`.
+
+-   `opponent`: character vector
+
+-   `win`: logical vector
+
+-   `cal_score`: integer vector
+
+-   `opp_score`: integer vector
+
+-   `attend`: double (i.e. real) vector
+
+```{r}
+# your code
+opponent <- c('San Francisco', 'Cal Poly', 'Santa Clara', 'Fullerton', 'Utah Valley', 'Arizona', 'Arizona St', 'Washington St', 'Oregon', 'Oregon St')
+win <- c('TRUE', 'TRUE', 'FALSE', 'FALSE', 'FALSE', 'TRUE','FALSE', 'FALSE', 'TRUE', 'TRUE')
+cal_score <- c(5L, 2L, 0L, 0L, 1L, 2L, 1L, 1L, 8L, 3L)
+opp_score <- c(1L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 1L, 0L)
+attend <- c(885, 846, 150, 312, 194, 212, 707, 179, 206, 550)
+```
+
+## Subsetting (i.e. indexing) Vectors
+
+Refer to the vectors created in the preceding subsection. Write R commands (just one single-line commands)---displaying the output---that answer the following questions:
+
+a)  How many games did Cal win? *Hint*: the `sum()` function is your friend.
+
+```{r}
+# your code
+sum(win == TRUE)
+```
+
+<br>
+
+b)  What is the name of the opponent team that received 8 goals?
+
+```{r}
+# your code
+opponent[cal_score == 8]
+```
+
+<br>
+
+c)  What is the name of the opponent team associated to the largest attendance? *Hint*: the `which.max()` function is your friend.
+
+```{r}
+# your code
+opponent[which.max(attend)]
+```
+
+<br>
+
+d)  What was the median scored goals by Cal?
+
+```{r}
+# your code
+median(cal_score)
+```
+
+<br>
+
+e)  Against which opponent team Cal had the largest positive score difference? *Hint*: the `which.max()` function is your friend.
+
+```{r}
+# your code
+opponent[which.max(cal_score - opp_score)]
+```
+
+<br>
+
+f)  How many games did Cal tie or lose?
+
+```{r}
+# your code
+sum(win == FALSE)
+```
+
+<br>
+
+g)  In how many games Cal scored between 3 and 8 goals (inclusive)?
+
+```{r}
+# your code
+sum(cal_score >= 3 & cal_score <= 8)
+```
+
+<br>
+
+h)  Against which opponent team Cal had the largest negative score difference? *Hint*: the `which.min()` function is your friend.
+
+```{r}
+# your code
+opponent[which.min(cal_score - opp_score)]
+```
+
+<br>
+
+i)  What was the average score of opponent teams?
+
+```{r}
+# your code
+sum(opp_score) / length(opp_score)
+```
+
+<br>
+
+j)  What is the third quartile (i.e. 75th percentile) of scored goals by Cal in those game won (by Cal)? *Hint*: the `quantile()` function is your friend.
+
+```{r}
+# your code
+cal_win <- c(5L, 2L, NA, NA, NA, 2L, NA, NA, 8L, 3L)
+unname(quantile(cal_win, na.rm = T, probs = 0.75))
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Technical questions about vectors
+
+Consider the following two vectors `u` and `v`:
+
+```{r}
+u <- c(2, 4, 6, 8, 10)
+
+v <- c("A", "E", "I", "O", "U")
+```
+
+In the following parts, indicate True or False for whether the given command involves: a) coercion, and/or b) vectorization, and/or c) recycling.
+
+1)  `v[u > 5]`
+
+    a)  coercion False
+    b)  vectorization True
+    c)  recycling False
+
+2)  `u[v != "B"] + TRUE`
+
+    a)  coercion True
+    b)  vectorization True
+    c)  recycling False
+
+------------------------------------------------------------------------
+
+## Rubric {.unnumbered .unlisted}
+
+-   😞   **None (0 pts)**: No submission; or terribly wrong; or incorrect files.
+
+-   😟   **Deficient (1 pt)**: Displays minimal effort. Fairly incomplete. Code is badly written and/or has various major issues.
+
+-   🙁   **Needs improvement (2 pts)**: Displays some effort. Doesn't complete all components. Code is poorly written and/or has various minor issues, possibly including a couple of major issues or mistakes.
+
+-   😐   **Fair (3 pts)**: Decent effort. Hits all the elements. Possibly a couple of minor mistakes or some non-minor issue. Code written succinctly, but it could be better documented, and/or formatted.
+
+-   🙂   **Good (4 pts)**: Solid effort. Hits all the elements. Possibly a minor mistake. Fairly easy to follow (both the code and the output).
+
+-   😀   **Excellent (5 pts)**: Finished all components of the assignment correctly (without any issues, bugs, mistakes). Code written succinctly, well documented, and easy to follow (both the code and the output).

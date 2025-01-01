@@ -1,0 +1,484 @@
+---
+title: "Lab-09: More Regex"
+subtitle: "Stat 133"
+author: "Wenyi Shi"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+library(tidyverse)  # data science ecosystem
+library(rvest)      # for web scraping
+```
+
+::: {.callout-note icon="false"}
+## General Instructions
+
+-   Use the template file `lab09-template.qmd` to answer the questions.
+
+-   Rename this file as `lab09-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `lab09-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes
+    `embed-resources: true`.
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in bCourses.
+
+-   Please note that if you submit the incorrect files you will receive
+    no credit.
+:::
+
+# Data: R Packages by Name
+
+The data for this assignment involves the content of the webpage **CRAN
+packages by Name**:
+https://cran.r-project.org/web/packages/available_packages_by_name.html
+
+## HTML Data file
+
+Because new R packages are constantly added to CRAN every day, instead
+of directly webscraping data from the above URL, we are providing an
+HTML file `available_packages_by_name.html` (available in bCourses, see
+`Files/labs/lab09a`).
+
+Below we provide auxiliary code to help you import the data into R by
+using functions from the package `"rvest"`.
+
+## Import Data
+
+```{r}
+# assuming that the HTML file is your working directory
+html_file = 'available_packages_by_name.html'
+
+# scraping the HTML table
+tbls = html_file |> 
+  read_html() |>
+  html_table(fill = TRUE)
+
+# Adding column names, and removing blank lines
+dat = tbls[[1]]
+colnames(dat) = c('package', 'title')
+dat = na.omit(dat)
+
+slice_head(dat, n = 5)
+```
+
+------------------------------------------------------------------------
+
+# Counting Packages
+
+In this section, we present a few examples to count packages whose names
+meet certain conditions.
+
+## Example: Packages and `"x"`
+
+a)  Number of packages that contain letter `"x"`:
+
+```{r}
+sum(str_detect(dat$package, "x"))
+```
+
+<br>
+
+b)  Number of packages that start with letter `"x"`:
+
+```{r}
+sum(str_detect(dat$package, "^x"))
+```
+
+<br>
+
+c)  Number of packages that end with letter `"x"`:
+
+```{r}
+sum(str_detect(dat$package, "x$"))
+```
+
+<br>
+
+d)  Number of packages that do not contain `"x"`
+
+```{r}
+sum(str_detect(dat$package, "^[^x]+$"))
+```
+
+```{r eval = FALSE}
+# equivalent
+sum(!str_detect(dat$package, "x"))
+```
+
+<br>
+
+e)  Number of packages that contain `"x"` but not in the first
+    character:
+
+```{r}
+sum(str_detect(dat$package, "^[^x].*x"))
+```
+
+<br>
+
+f)  Number of packages that contain `"x"` but not in the last character:
+
+```{r}
+sum(str_detect(dat$package, "x.*[^x]$"))
+```
+
+<br>
+
+g)  Number of packages that contain `"x"` but not in the first nor last
+    characters:
+
+```{r}
+sum(str_detect(dat$package, "^[^x].*x.*[^x]$"))
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Your Turn: Counting Packages
+
+a)  Count the number of packages that contain one or more numbers
+
+```{r}
+# your code
+sum(str_detect(dat$package, "\\d+"))
+```
+
+<br>
+
+b)  Count the number of packages that contain one or more dots
+
+```{r}
+# your code
+sum(str_detect(dat$package, "\\."))
+```
+
+<br>
+
+c)  Count the number of packages that contain only lower case letters.
+    *Hint*: the anchors `"^"` and `"$"` are your friends.
+
+```{r}
+# your code
+sum(str_detect(dat$package, "^[a-z]+$"))
+```
+
+<br>
+
+d)  Count the number of packages that contain only upper case letters
+    *Hint*: the anchors `"^"` and `"$"` are your friends.
+
+```{r}
+# your code
+sum(str_detect(dat$package, "^[A-Z]+$"))
+```
+
+<br>
+
+e)  Count the number of packages that do not contain numbers. *Hint*:
+    the anchors `"^"` and `"$"` are your friends; so it is a character
+    class for anything but digits `"\\D"`.
+
+```{r}
+# your code
+sum(str_detect(dat$package, "^[\\D]+$"))
+```
+
+<br>
+
+f)  Count the number of packages that do not contain vowels. *Hint*: the
+    anchors `"^"` and `"$"` are your friends; so it is a character set
+    negating vowels.
+
+```{r}
+# your code
+# 1714
+sum(str_detect(dat$package, "^[^aeiouAEIOU]+$"))
+```
+
+<br>
+
+g)  Count the number of packages that contain digit(s) AND dot(s).
+
+```{r}
+# your code
+# 48
+sum(str_detect(dat$package,".*[0-9].*[.].*|.*[.].*[0-9].*"))
+```
+
+<br>
+
+h)  Count the number of packages that contain exactly 3 numbers
+
+```{r}
+# your code 
+# 13
+sum(str_detect(dat$package,"^[^\\d]*\\d[^\\d]*\\d[^\\d]*\\d[^\\d]*$"))
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Your Turn: Checking Valid Names
+
+According to R, the name of a package
+
+> should contain only (ASCII) letters, numbers and dot, have at least
+> two characters and start with a letter and not end in a dot.
+
+a)  Confirm that all packages have at least 2 characters. *Hint:*
+    `nchar()` is your friend.
+
+```{r}
+# your code
+all(nchar(dat$package) >= 2)
+```
+
+<br>
+
+b)  Confirm that no packages start with a number.
+
+```{r}
+# your code
+all(!str_detect(dat$package, "^[0-9]"))
+```
+
+<br>
+
+c)  Confirm that no packages start with a dot.
+
+```{r}
+# your code
+all(!str_detect(dat$package, "^\\.")) 
+```
+
+<br>
+
+d)  Confirm that no packages end with a dot.
+
+```{r}
+# your code
+all(!str_detect(dat$package, "\\.$"))
+```
+
+<br>
+
+e)  Confirm that all packages start with a letter.
+
+```{r}
+# your code
+all(str_detect(dat$package, "^[A-Za-z]"))
+```
+
+<br>
+
+f)  Confirm that no packages contain an underscore `"_"`.
+
+```{r}
+# your code
+all(!str_detect(dat$package, "_"))
+```
+
+<br>
+
+g)  Confirm that no packages contain exclamation `"!"` or question `"?"`
+    marks.
+
+```{r}
+# your code
+all(!str_detect(dat$package, "[!?]"))
+```
+
+<br>
+
+------------------------------------------------------------------------
+
+# Words in Title
+
+Consider the column `title`
+
+```{r}
+dat |> select(title) |> slice_head(n = 6)
+```
+
+## Examples
+
+1)  Say we are interested in counting the number of packages that
+    include in their `title` terms such as "Nonlinear", "Non-linear",
+    "nonlinear", "nonlinear"
+
+```{r}
+# option 1
+sum(str_detect(dat$title, "[nN]on-?linear"))
+```
+
+What's going on in this pattern:
+
+-   `[nN]` matches a lower case "n" or an upper case "N"
+
+-   the dash or hyphen is made optional: `-?`; it could be there but it
+    does not have to be all the time
+
+<br>
+
+2)  Here's another example: say we are interesting in counting packages
+    that contain "Cluster", "Clusters", "Clustered", "Clustering".
+    Because all these words have the same root "Cluster", we can simply
+    do something like this:
+
+```{r}
+sum(str_detect(dat$title, "Cluster"))
+```
+
+Now, what if just want "Clustering" or "Clustered"? We need to modify
+the pattern to add the pairs "ed" or "ing"
+
+```{r}
+sum(str_detect(dat$title, "Cluster(ed|ing)"))
+```
+
+## Your Turn
+
+a)  How many packages include in their `title` terms such as "Bayes",
+    "bayes", "Bayesian", "bayesian"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "(Bayes|bayes|Bayesian|bayesian)"))
+```
+
+<br>
+
+b)  How many packages include in their `title` terms such as "model",
+    "Model", "models", "Models", "Modeling", "modeling", "Modelling",
+    "modelling"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "[m|M]odel[s|ing|ling]?"))
+```
+
+<br>
+
+c)  How many packages include in their `title` terms such as "Modeling",
+    or "Modelling"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "(Modeling|Modelling)"))
+```
+
+<br>
+
+d)  How many packages include in their `title` terms such as "Models",
+    "Modeling", or "Modelling"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "(Models|Modeling|Modelling)"))
+```
+
+<br>
+
+e)  How many packages include in their `title` terms such as
+    "statistics", "Statistics", "statistical", "Statistical",
+    "Statistically", "statistically"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "[s|S]tatistic[s|al|ally]?"))
+```
+
+<br>
+
+f)  How many packages include in their `title` terms such as "Graphics",
+    "Graphical", "Graphing"?
+
+```{r}
+# your code
+sum(str_detect(dat$title, "Graph[ics|ical|ing]?"))
+```
+
+------------------------------------------------------------------------
+
+::: callout-note
+## Optional Practice
+
+The following sections **are optional** and you don't need to submit
+solutions for them. These additional sections are provided to give you
+more practice problems
+:::
+
+# Graphical Challenges
+
+Refer to the instructions file: `lab09a-submission-instructions.html`
+(see bCourses). Taking into account the initial letter of the package
+names, try to obtain the graphics display in the instructions.
+
+## Lower case initials
+
+```{r}
+# your code
+filtered_package = tibble(package= dat$package[str_detect(dat$package, "^[a-z]")])
+initial_package = mutate(filtered_package, initial = substring(package, 1, 1))
+sorted_data = initial_package |>
+  group_by(initial) |>
+  count(initial)
+
+ggplot(data = sorted_data, aes(x = reorder(initial, desc(n)), y = n)) + 
+  geom_bar(stat='identity') +
+  labs(title = "Number of packages by initial letter",
+       subtitle = "(Packages with lower case initials)",
+       x = "initial",
+       y = "count") +
+  theme_minimal()
+```
+
+## Upper case initials
+
+```{r}
+# your code
+filtered_package = tibble(package= dat$package[str_detect(dat$package, "^[A-Z]")])
+initial_package = mutate(filtered_package, initial = substring(package, 1, 1))
+sorted_data = initial_package |>
+  group_by(initial) |>
+  count(initial)
+
+ggplot(data = sorted_data, aes(x = reorder(initial, desc(n)), y = n)) + 
+  geom_bar(stat='identity') +
+  labs(title = "Number of packages by initial letter",
+       subtitle = "(Packages with upper case initials)",
+       x = "initial",
+       y = "count") +
+  theme_minimal()
+```
+
+## Upper & Lower case initials
+
+```{r}
+# your code
+filtered_package = tibble(package= dat$package[str_detect(dat$package, "^[a-zA-Z]")])
+initial_package = mutate(filtered_package, initial = substring(package, 1, 1))
+sorted_data = initial_package |>
+  group_by(lower = tolower(initial)) |>
+  count(lower)
+
+ggplot(data = sorted_data, aes(x = reorder(lower, desc(n)), y = n)) + 
+  geom_bar(stat='identity') +
+  labs(title = "Number of packages by initial letter",
+       x = "initial",
+       y = "count") +
+  theme_minimal()
+```
