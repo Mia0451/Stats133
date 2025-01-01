@@ -6,7 +6,7 @@
 
 ## App
 
-[App 1](https://wenyishi.shinyapps.io/apps1/)
+[S&P 500 Returns Analysis Website](https://wenyishi.shinyapps.io/apps1/)
 
 [App 2](https://wenyishi.shinyapps.io/apps2/)
 
