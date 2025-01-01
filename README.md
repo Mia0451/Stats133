@@ -10,4 +10,4 @@
 
 [Text Analysis of Harry Potter Website](https://wenyishi.shinyapps.io/app2/)
 
-[App 3](https://wenyishi.shinyapps.io/app3/)
+[California Crash Data Analysis Website](https://wenyishi.shinyapps.io/app3/)
