@@ -1,4 +1,9 @@
 # UC Berkeley Stats133
+This repository contains homework, lab and apps for my UCB Stats133. In order to play with the `qmd` file, you need to install `R` and `RStudio`
+
+- R for Mac: https://cran.r-project.org/bin/macosx/
+- R for windows: https://cran.r-project.org/bin/windows/base/
+- RStudio download: https://www.rstudio.com/products/rstudio/download/
 
 ## Homework
 
